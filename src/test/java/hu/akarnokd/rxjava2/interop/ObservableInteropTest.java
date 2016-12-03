@@ -23,22 +23,22 @@ import java.util.stream.*;
 
 import org.junit.*;
 
-import io.reactivex.Flowable;
+import io.reactivex.Observable;
 import io.reactivex.internal.functions.Functions;
 import io.reactivex.internal.fuseable.QueueSubscription;
-import io.reactivex.processors.UnicastProcessor;
-import io.reactivex.subscribers.TestSubscriber;
+import io.reactivex.observers.TestObserver;
+import io.reactivex.subjects.UnicastSubject;
 
-public class FlowableInteropTest {
+public class ObservableInteropTest {
 
     @Test
     public void utilityClass() {
-        TestHelper.checkUtilityClass(FlowableInterop.class);
+        TestHelper.checkUtilityClass(ObservableInterop.class);
     }
 
     @Test
     public void fromStream() {
-        FlowableInterop.fromStream(Arrays.asList(1, 2, 3, 4, 5).stream())
+        ObservableInterop.fromStream(Arrays.asList(1, 2, 3, 4, 5).stream())
         .test()
         .assertResult(1, 2, 3, 4, 5);
     }
@@ -46,29 +46,29 @@ public class FlowableInteropTest {
     @Test
     public void fromStream2() {
         Stream<Integer> s = Arrays.asList(1, 2, 3, 4, 5).stream();
-        FlowableInterop.fromStream(s)
+        ObservableInterop.fromStream(s)
         .test()
         .assertResult(1, 2, 3, 4, 5);
 
-        FlowableInterop.fromStream(s)
+        ObservableInterop.fromStream(s)
         .test()
         .assertFailure(IllegalStateException.class);
     }
 
     @Test
     public void fromOptional() {
-        FlowableInterop.fromOptional(Optional.of(1))
+        ObservableInterop.fromOptional(Optional.of(1))
         .test()
         .assertResult(1);
 
-        FlowableInterop.fromOptional(Optional.empty())
+        ObservableInterop.fromOptional(Optional.empty())
         .test()
         .assertResult();
     }
 
     @Test
     public void fromFuture() {
-        FlowableInterop.fromFuture(CompletableFuture.supplyAsync(() -> 1))
+        ObservableInterop.fromFuture(CompletableFuture.supplyAsync(() -> 1))
         .test()
         .awaitDone(5, TimeUnit.SECONDS)
         .assertResult(1);
@@ -76,7 +76,7 @@ public class FlowableInteropTest {
 
     @Test
     public void fromFutureError() {
-        TestSubscriber<Object> ts = FlowableInterop.fromFuture(CompletableFuture.supplyAsync(() -> { throw new IllegalArgumentException(); }))
+        TestObserver<Object> ts = ObservableInterop.fromFuture(CompletableFuture.supplyAsync(() -> { throw new IllegalArgumentException(); }))
         .test()
         .awaitDone(5, TimeUnit.SECONDS)
         .assertFailure(CompletionException.class);
@@ -88,65 +88,65 @@ public class FlowableInteropTest {
     @SuppressWarnings("unchecked")
     @Test
     public void collector() {
-        Flowable.range(1, 5)
-        .compose(FlowableInterop.collect(Collectors.toList()))
+        Observable.range(1, 5)
+        .compose(ObservableInterop.collect(Collectors.toList()))
         .test()
         .assertResult(Arrays.asList(1, 2, 3, 4, 5));
     }
 
     @Test
     public void first() {
-        TestHelper.assertFuture(1, Flowable.range(1, 5)
-                .to(FlowableInterop.first())
+        TestHelper.assertFuture(1, Observable.range(1, 5)
+                .to(ObservableInterop.first())
         );
     }
 
     @Test(expected = NoSuchElementException.class)
     public void firstEmpty() {
-        TestHelper.assertFuture(null, Flowable.empty()
-                .to(FlowableInterop.first())
+        TestHelper.assertFuture(null, Observable.empty()
+                .to(ObservableInterop.first())
         );
     }
 
     @Test
     public void last() {
-        TestHelper.assertFuture(5, Flowable.range(1, 5)
-                .to(FlowableInterop.last())
+        TestHelper.assertFuture(5, Observable.range(1, 5)
+                .to(ObservableInterop.last())
         );
     }
 
     @Test(expected = NoSuchElementException.class)
     public void lastEmpty() {
-        TestHelper.assertFuture(null, Flowable.empty()
-                .to(FlowableInterop.last())
+        TestHelper.assertFuture(null, Observable.empty()
+                .to(ObservableInterop.last())
         );
     }
 
     @Test
     public void single() {
-        TestHelper.assertFuture(1, Flowable.just(1)
-                .to(FlowableInterop.single())
+        TestHelper.assertFuture(1, Observable.just(1)
+                .to(ObservableInterop.single())
         );
     }
 
     @Test(expected = NoSuchElementException.class)
     public void singleEmpty() {
-        TestHelper.assertFuture(null, Flowable.empty()
-                .to(FlowableInterop.single())
+        TestHelper.assertFuture(null, Observable.empty()
+                .to(ObservableInterop.single())
         );
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void singleLonger() {
-        TestHelper.assertFuture(null, Flowable.range(1, 5)
-                .to(FlowableInterop.single())
+        TestHelper.assertFuture(null, Observable.range(1, 5)
+                .to(ObservableInterop.single())
         );
     }
 
     @Test
     public void toStream() {
-        List<Integer> list = Flowable.just(1, 2, 3, 4, 5)
-        .to(FlowableInterop.toStream())
+        List<Integer> list = Observable.just(1, 2, 3, 4, 5)
+        .to(ObservableInterop.toStream())
         .collect(Collectors.toList());
 
         Assert.assertEquals(Arrays.asList(1, 2, 3, 4, 5), list);
@@ -154,7 +154,7 @@ public class FlowableInteropTest {
 
     @Test
     public void toStreamCancel() {
-        UnicastProcessor<Integer> up = UnicastProcessor.create();
+        UnicastSubject<Integer> up = UnicastSubject.create();
 
         up.onNext(1);
         up.onNext(2);
@@ -163,52 +163,52 @@ public class FlowableInteropTest {
         up.onNext(5);
 
         try (Stream<Integer> s = up
-                .to(FlowableInterop.toStream()).limit(3)) {
-            Assert.assertTrue(up.hasSubscribers());
+                .to(ObservableInterop.toStream()).limit(3)) {
+            Assert.assertTrue(up.hasObservers());
 
             List<Integer> list = s.collect(Collectors.toList());
             Assert.assertEquals(Arrays.asList(1, 2, 3), list);
         }
 
-        Assert.assertFalse(up.hasSubscribers());
+        Assert.assertFalse(up.hasObservers());
     }
 
     @Test
     public void firstElement() {
-        Assert.assertEquals((Integer)1, Flowable.range(1, 5)
-        .to(FlowableInterop.firstElement()).get());
+        Assert.assertEquals((Integer)1, Observable.range(1, 5)
+        .to(ObservableInterop.firstElement()).get());
     }
 
     @Test
     public void firstElementEmpty() {
-        Assert.assertFalse(Flowable.empty()
-        .to(FlowableInterop.firstElement()).isPresent());
+        Assert.assertFalse(Observable.empty()
+        .to(ObservableInterop.firstElement()).isPresent());
     }
 
     @Test
     public void lastElement() {
-        Assert.assertEquals((Integer)5, Flowable.range(1, 5)
-        .to(FlowableInterop.lastElement()).get());
+        Assert.assertEquals((Integer)5, Observable.range(1, 5)
+        .to(ObservableInterop.lastElement()).get());
     }
 
     @Test
     public void lastElementEmpty() {
-        Assert.assertFalse(Flowable.empty()
-        .to(FlowableInterop.lastElement()).isPresent());
+        Assert.assertFalse(Observable.empty()
+        .to(ObservableInterop.lastElement()).isPresent());
     }
 
     @Test
     public void flatMapStream() {
-        Flowable.range(1, 5)
-        .compose(FlowableInterop.flatMapStream(v -> Arrays.asList(v, v + 1).stream()))
+        Observable.range(1, 5)
+        .compose(ObservableInterop.flatMapStream(v -> Arrays.asList(v, v + 1).stream()))
         .test()
         .assertResult(1, 2, 2, 3, 3, 4, 4, 5, 5, 6);
     }
 
     @Test
     public void mapOptional() {
-        Flowable.range(1, 5).hide()
-        .compose(FlowableInterop.mapOptional(v -> {
+        Observable.range(1, 5).hide()
+        .compose(ObservableInterop.mapOptional(v -> {
             if (v % 2 == 0) {
                 return Optional.of(-v);
             }
@@ -220,8 +220,8 @@ public class FlowableInteropTest {
 
     @Test
     public void mapOptionalError() {
-        Flowable.<Integer>error(new IOException())
-        .compose(FlowableInterop.mapOptional(v -> {
+        Observable.<Integer>error(new IOException())
+        .compose(ObservableInterop.mapOptional(v -> {
             if (v % 2 == 0) {
                 return Optional.of(-v);
             }
@@ -233,43 +233,43 @@ public class FlowableInteropTest {
 
     @Test
     public void mapOptionalSyncFused() {
-        TestSubscriber<Integer> ts = TestHelper.fusedSubscriber(QueueSubscription.ANY);
+        TestObserver<Integer> ts = TestHelper.fusedObserver(QueueSubscription.ANY);
 
-        Flowable.range(1, 5)
-        .compose(FlowableInterop.mapOptional(v -> {
+        Observable.range(1, 5)
+        .compose(ObservableInterop.mapOptional(v -> {
             if (v % 2 == 0) {
                 return Optional.of(-v);
             }
             return Optional.empty();
         }))
         .subscribeWith(ts)
-        .assertOf(TestHelper.assertFusedSubscriber(QueueSubscription.SYNC))
+        .assertOf(TestHelper.assertFusedObserver(QueueSubscription.SYNC))
         .assertResult(-2, -4);
     }
 
     @Test
     public void mapOptionalAsyncFused() {
-        TestSubscriber<Integer> ts = TestHelper.fusedSubscriber(QueueSubscription.ANY);
+        TestObserver<Integer> ts = TestHelper.fusedObserver(QueueSubscription.ANY);
 
-        UnicastProcessor<Integer> up = UnicastProcessor.create();
+        UnicastSubject<Integer> up = UnicastSubject.create();
         TestHelper.emit(up, 1, 2, 3, 4, 5);
 
         up
-        .compose(FlowableInterop.mapOptional(v -> {
+        .compose(ObservableInterop.mapOptional(v -> {
             if (v % 2 == 0) {
                 return Optional.of(-v);
             }
             return Optional.empty();
         }))
         .subscribeWith(ts)
-        .assertOf(TestHelper.assertFusedSubscriber(QueueSubscription.ASYNC))
+        .assertOf(TestHelper.assertFusedObserver(QueueSubscription.ASYNC))
         .assertResult(-2, -4);
     }
 
     @Test
     public void mapOptionalConditional() {
-        Flowable.range(1, 5).hide()
-        .compose(FlowableInterop.mapOptional(v -> {
+        Observable.range(1, 5).hide()
+        .compose(ObservableInterop.mapOptional(v -> {
             if (v % 2 == 0) {
                 return Optional.of(-v);
             }
@@ -282,8 +282,8 @@ public class FlowableInteropTest {
 
     @Test
     public void mapOptionalErrorConditional() {
-        Flowable.<Integer>error(new IOException())
-        .compose(FlowableInterop.mapOptional(v -> {
+        Observable.<Integer>error(new IOException())
+        .compose(ObservableInterop.mapOptional(v -> {
             if (v % 2 == 0) {
                 return Optional.of(-v);
             }
@@ -296,10 +296,10 @@ public class FlowableInteropTest {
 
     @Test
     public void mapOptionalSyncFusedConditional() {
-        TestSubscriber<Integer> ts = TestHelper.fusedSubscriber(QueueSubscription.ANY);
+        TestObserver<Integer> ts = TestHelper.fusedObserver(QueueSubscription.ANY);
 
-        Flowable.range(1, 5)
-        .compose(FlowableInterop.mapOptional(v -> {
+        Observable.range(1, 5)
+        .compose(ObservableInterop.mapOptional(v -> {
             if (v % 2 == 0) {
                 return Optional.of(-v);
             }
@@ -307,19 +307,19 @@ public class FlowableInteropTest {
         }))
         .filter(Functions.alwaysTrue())
         .subscribeWith(ts)
-        .assertOf(TestHelper.assertFusedSubscriber(QueueSubscription.SYNC))
+        .assertOf(TestHelper.assertFusedObserver(QueueSubscription.SYNC))
         .assertResult(-2, -4);
     }
 
     @Test
     public void mapOptionalAsyncFusedConditional() {
-        TestSubscriber<Integer> ts = TestHelper.fusedSubscriber(QueueSubscription.ANY);
+        TestObserver<Integer> ts = TestHelper.fusedObserver(QueueSubscription.ANY);
 
-        UnicastProcessor<Integer> up = UnicastProcessor.create();
+        UnicastSubject<Integer> up = UnicastSubject.create();
         TestHelper.emit(up, 1, 2, 3, 4, 5);
 
         up
-        .compose(FlowableInterop.mapOptional(v -> {
+        .compose(ObservableInterop.mapOptional(v -> {
             if (v % 2 == 0) {
                 return Optional.of(-v);
             }
@@ -327,7 +327,7 @@ public class FlowableInteropTest {
         }))
         .filter(Functions.alwaysTrue())
         .subscribeWith(ts)
-        .assertOf(TestHelper.assertFusedSubscriber(QueueSubscription.ASYNC))
+        .assertOf(TestHelper.assertFusedObserver(QueueSubscription.ASYNC))
         .assertResult(-2, -4);
     }
 }

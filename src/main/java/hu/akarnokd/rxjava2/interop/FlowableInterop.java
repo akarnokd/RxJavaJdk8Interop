@@ -108,7 +108,6 @@ public final class FlowableInterop {
         };
     }
 
-
     /**
      * Returns a CompletionStage that signals the single element of the Flowable,
      * IllegalArgumentException if the Flowable is longer than 1 element
@@ -187,9 +186,16 @@ public final class FlowableInterop {
         });
     }
 
+    /**
+     * Maps the upstream value into an optional and extracts its optional value to be emitted towards
+     * the downstream if present.
+     * @param <T> the upstream value type
+     * @param <R> the result value type
+     * @param mapper the function receiving the upstream value and should return an Optional
+     * @return the Transformer instance to be used with {@code Flowable.compose()}
+     */
     public static <T, R> FlowableTransformer<T, R> mapOptional(Function<? super T, Optional<R>> mapper) {
-        // TODO implement
-        throw new UnsupportedOperationException();
+        return f -> RxJavaPlugins.onAssembly(new FlowableMapOptional<>(f, mapper));
     }
 
 }

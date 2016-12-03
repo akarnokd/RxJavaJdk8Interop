@@ -17,12 +17,15 @@
 package hu.akarnokd.rxjava2.interop;
 
 import java.util.*;
-import java.util.concurrent.CompletionStage;
+import java.util.concurrent.*;
 import java.util.stream.*;
 
 import io.reactivex.Observable;
 import io.reactivex.ObservableTransformer;
+import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.Function;
+import io.reactivex.plugins.RxJavaPlugins;
+import io.reactivex.subjects.AsyncSubject;
 
 /**
  * Utility methods, sources and operators supporting RxJava 2 and the Jdk 8 API
@@ -37,45 +40,119 @@ public final class ObservableInterop {
         throw new IllegalStateException("No instances!");
     }
 
-    public static <T> Observable<T> observableFromStream(Stream<T> stream) {
-        // TODO implement
-        throw new UnsupportedOperationException();
+    /**
+     * Wrap a Stream into a Flowable.
+     * <p>Note that Streams can only be consumed once and non-concurrently.
+     * @param <T> the value type
+     * @param stream the source Stream
+     * @return the new Flowable instance
+     */
+    public static <T> Observable<T> fromStream(Stream<T> stream) {
+        return Observable.fromIterable(() -> stream.iterator());
     }
 
-    public static <T> Observable<T> observableFromOptional(Optional<T> opt) {
-        // TODO implement
-        throw new UnsupportedOperationException();
+    /**
+     * Returns a Flowable for the value (or lack of) in the given Optional.
+     * @param <T> the value type
+     * @param opt the optional to wrap
+     * @return the new Flowable instance
+     */
+    public static <T> Observable<T> fromOptional(Optional<T> opt) {
+        return opt.map(Observable::just).orElse(Observable.empty());
     }
 
-    public static <T> Observable<T> observableFromFuture(CompletionStage<T> cs) {
-        // TODO implement
-        throw new UnsupportedOperationException();
+    /**
+     * Create a Flowable that signals the terminal value or error of the given
+     * CompletionStage.
+     * <p>Cancelling the Flowable subscription doesn't cancel the CompletionStage.
+     * @param <T> the value type
+     * @param cs the CompletionStage instance
+     * @return the new Flowable instance
+     */
+    public static <T> Observable<T> fromFuture(CompletionStage<T> cs) {
+        AsyncSubject<T> ap = AsyncSubject.create();
+        cs.whenComplete((v, e) -> {
+            if (e != null) {
+                ap.onError(e);
+            } else {
+                ap.onNext(v);
+                ap.onComplete();
+            }
+        });
+        return ap;
     }
 
-    public static <T, A, R> ObservableTransformer<T, R> observableCollect(Collector<T, A, R> collector) {
-        // TODO implement
-        throw new UnsupportedOperationException();
+    /**
+     * Collect the elements of the Flowable via the help of Collector and its callback
+     * functions.
+     * @param <T> the upstream value type
+     * @param <A> the accumulated type
+     * @param <R> the result type
+     * @param collector the Collector object providing the callbacks
+     * @return the Transformer instance to be used with {@code Flowable.compose()}
+     */
+    public static <T, A, R> ObservableTransformer<T, R> collect(Collector<T, A, R> collector) {
+        return f -> RxJavaPlugins.onAssembly(new ObservableCollector<>(f, collector));
     }
 
-    public static <T> Function<Observable<T>, CompletionStage<T>> observableFirst() {
-        // TODO implement
-        throw new UnsupportedOperationException();
+    /**
+     * Returns a CompletionStage that signals the first element of the Flowable
+     * or a NoSuchElementException if the Flowable is empty.
+     * @param <T> the value type
+     * @return the Function to be used via {@code Flowable.to}.
+     */
+    public static <T> Function<Observable<T>, CompletionStage<T>> first() {
+        return f -> {
+            CompletableFuture<T> cf = new CompletableFuture<>();
+            f.firstOrError().subscribe(cf::complete, cf::completeExceptionally);
+            return cf;
+        };
     }
 
-
-    public static <T> Function<Observable<T>, CompletionStage<T>> observableSingle() {
-        // TODO implement
-        throw new UnsupportedOperationException();
+    /**
+     * Returns a CompletionStage that signals the single element of the Flowable,
+     * IllegalArgumentException if the Flowable is longer than 1 element
+     * or a NoSuchElementException if the Flowable is empty.
+     * @param <T> the value type
+     * @return the Function to be used with {@code Flowable.to}.
+     */
+    public static <T> Function<Observable<T>, CompletionStage<T>> single() {
+        return f -> {
+            CompletableFuture<T> cf = new CompletableFuture<>();
+            f.singleOrError().subscribe(cf::complete, cf::completeExceptionally);
+            return cf;
+        };
     }
 
-    public static <T> Function<Observable<T>, CompletionStage<T>> observableLast() {
-        // TODO implement
-        throw new UnsupportedOperationException();
+    /**
+     * Returns a CompletionStage that emits the last element of the Flowable or
+     * NoSuchElementException if the Flowable is empty.
+     * @param <T> the value type
+     * @return the Function to be used with {@code Flowable.to}.
+     */
+    public static <T> Function<Observable<T>, CompletionStage<T>> last() {
+        return f -> {
+            CompletableFuture<T> cf = new CompletableFuture<>();
+            f.lastOrError().subscribe(cf::complete, cf::completeExceptionally);
+            return cf;
+        };
     }
 
-    public static <T> Function<Observable<T>, Stream<T>> observableToStream() {
-        // TODO implement
-        throw new UnsupportedOperationException();
+    /**
+     * Returns a blocking Stream of the elements of the Flowable.
+     * <p>
+     * Closing the Stream will cancel the flow.
+     * @param <T> the value type
+     * @return the Function to be used with {@code Flowable.to}.
+     */
+    public static <T> Function<Observable<T>, Stream<T>> toStream() {
+        return f -> {
+            Iterator<T> it = f.blockingIterable().iterator();
+
+            Stream<T> s = StreamSupport.stream(Spliterators.spliterator(it, 0, 0), false);
+
+            return s.onClose(() -> ((Disposable)it).dispose());
+        };
     }
 
     /**
@@ -83,7 +160,7 @@ public final class ObservableInterop {
      * @param <T> the value type
      * @return the converter Function to be used with {@code Flowable.to()}.
      */
-    public static <T> Function<Observable<T>, Optional<T>> observableFirstElement() {
+    public static <T> Function<Observable<T>, Optional<T>> firstElement() {
         return o -> Optional.ofNullable(o.blockingFirst(null));
     }
 
@@ -92,13 +169,20 @@ public final class ObservableInterop {
      * @param <T> the value type
      * @return the converter Function to be used with {@code Flowable.to()}.
      */
-    public static <T> Function<Observable<T>, Optional<T>> observableLastElement() {
+    public static <T> Function<Observable<T>, Optional<T>> lastElement() {
         return o -> Optional.ofNullable(o.blockingLast(null));
     }
 
-    public static <T, R> ObservableTransformer<T, R> observableMapOptional(Function<? super T, Optional<R>> mapper) {
-        // TODO implement
-        throw new UnsupportedOperationException();
+    /**
+     * Maps the upstream value into an optional and extracts its optional value to be emitted towards
+     * the downstream if present.
+     * @param <T> the upstream value type
+     * @param <R> the result value type
+     * @param mapper the function receiving the upstream value and should return an Optional
+     * @return the Transformer instance to be used with {@code Flowable.compose()}
+     */
+    public static <T, R> ObservableTransformer<T, R> mapOptional(Function<? super T, Optional<R>> mapper) {
+        return f -> RxJavaPlugins.onAssembly(new ObservableMapOptional<>(f, mapper));
     }
 
     /**
@@ -108,7 +192,7 @@ public final class ObservableInterop {
      * @param mapper the function that returns a Stream for each upstream value
      * @return the new Transformer instance
      */
-    public static <T, R> ObservableTransformer<T, R> observableFlatMapStream(Function<? super T, ? extends Stream<R>> mapper) {
+    public static <T, R> ObservableTransformer<T, R> flatMapStream(Function<? super T, ? extends Stream<R>> mapper) {
         return o -> o.flatMapIterable(v -> {
             Iterator<R> it = mapper.apply(v).iterator();
             return () -> it;

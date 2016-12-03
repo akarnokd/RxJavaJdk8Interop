@@ -18,8 +18,9 @@ import static org.junit.Assert.*;
 import java.lang.reflect.*;
 import java.util.*;
 import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.*;
 
+import org.junit.Assert;
 import org.reactivestreams.*;
 
 import io.reactivex.*;
@@ -1619,5 +1620,56 @@ public enum TestHelper {
                 assertEquals(mode, f.get(ts));
             }
         };
+    }
+
+
+    public static <T> TestObserver<T> fusedObserver(int mode) {
+        TestObserver<T> ts = new TestObserver<>();
+        try {
+            Field f = BaseTestConsumer.class.getDeclaredField("initialFusionMode");
+            f.setAccessible(true);
+            f.set(ts, mode);
+        } catch (Throwable ex) {
+            throw Exceptions.propagate(ex);
+        }
+        return ts;
+    }
+
+    public static <T> Consumer<TestObserver<T>> assertFusedObserver(final int mode) {
+        return new Consumer<TestObserver<T>>() {
+            @Override
+            public void accept(TestObserver<T> ts) throws Exception {
+                Field f = BaseTestConsumer.class.getDeclaredField("establishedFusionMode");
+                f.setAccessible(true);
+                assertEquals(mode, f.get(ts));
+            }
+        };
+    }
+
+    public static <T> void assertFuture(T expected, CompletionStage<T> future) {
+        AtomicReference<T> value = new AtomicReference<>();
+        AtomicReference<Throwable> error = new AtomicReference<>();
+        CountDownLatch cdl = new CountDownLatch(1);
+
+        future.whenComplete((v, e) -> {
+            if (e != null) {
+                error.lazySet(e);
+            } else {
+                value.lazySet(v);
+            }
+            cdl.countDown();
+        });
+
+        try {
+            Assert.assertTrue(cdl.await(5, TimeUnit.SECONDS));
+        } catch (InterruptedException ex) {
+            throw Exceptions.propagate(ex);
+        }
+
+        if (error.get() != null) {
+            throw Exceptions.propagate(error.get());
+        }
+
+        Assert.assertEquals(expected, value.get());
     }
 }

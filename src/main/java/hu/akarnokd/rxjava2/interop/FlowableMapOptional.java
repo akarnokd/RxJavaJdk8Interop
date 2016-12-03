@@ -21,7 +21,11 @@ import java.util.Optional;
 import org.reactivestreams.*;
 
 import io.reactivex.Flowable;
+import io.reactivex.exceptions.Exceptions;
 import io.reactivex.functions.Function;
+import io.reactivex.internal.functions.ObjectHelper;
+import io.reactivex.internal.fuseable.ConditionalSubscriber;
+import io.reactivex.internal.subscribers.*;
 
 /**
  * Maps an upstream value into an Optional and emits its value if not empty.
@@ -42,7 +46,152 @@ final class FlowableMapOptional<T, R> extends Flowable<R> {
 
     @Override
     protected void subscribeActual(Subscriber<? super R> s) {
-        // TODO Auto-generated method stub
-        
+        if (s instanceof ConditionalSubscriber) {
+            source.subscribe(new MapOptionalConditionalSubscriber<>((ConditionalSubscriber<? super R>)s, mapper));
+        } else {
+            source.subscribe(new MapOptionalSubscriber<>(s, mapper));
+        }
+    }
+
+    static final class MapOptionalSubscriber<T, R> extends BasicFuseableSubscriber<T, R>
+    implements ConditionalSubscriber<T> {
+
+        final Function<? super T, Optional<R>> mapper;
+
+        public MapOptionalSubscriber(Subscriber<? super R> actual, Function<? super T, Optional<R>> mapper) {
+            super(actual);
+            this.mapper = mapper;
+        }
+
+        @Override
+        public void onNext(T t) {
+            if (!tryOnNext(t)) {
+                s.request(1);
+            }
+        }
+
+        @Override
+        public boolean tryOnNext(T t) {
+            if (done) {
+                return false;
+            }
+
+            if (sourceMode == ASYNC) {
+                actual.onNext(null);
+                return true;
+            }
+
+            Optional<R> o;
+
+            try {
+                o = ObjectHelper.requireNonNull(mapper.apply(t), "The mapper returned a null Optional");
+            } catch (Throwable ex) {
+                Exceptions.throwIfFatal(ex);
+                fail(ex);
+                return false;
+            }
+
+            if (o.isPresent()) {
+                actual.onNext(o.get());
+                return true;
+            }
+            return false;
+        }
+
+        @Override
+        public int requestFusion(int mode) {
+            return transitiveBoundaryFusion(mode);
+        }
+
+        @Override
+        public R poll() throws Exception {
+            for (;;) {
+                T t = qs.poll();
+
+                if (t == null) {
+                    return null;
+                }
+
+                Optional<R> o = mapper.apply(t);
+
+                if (o.isPresent()) {
+                    return o.get();
+                }
+
+                if (sourceMode != SYNC) {
+                    s.request(1);
+                }
+            }
+        }
+    }
+
+    static final class MapOptionalConditionalSubscriber<T, R> extends BasicFuseableConditionalSubscriber<T, R>
+    implements ConditionalSubscriber<T> {
+
+        final Function<? super T, Optional<R>> mapper;
+
+        public MapOptionalConditionalSubscriber(ConditionalSubscriber<? super R> actual, Function<? super T, Optional<R>> mapper) {
+            super(actual);
+            this.mapper = mapper;
+        }
+
+        @Override
+        public void onNext(T t) {
+            if (!tryOnNext(t)) {
+                s.request(1);
+            }
+        }
+
+        @Override
+        public boolean tryOnNext(T t) {
+            if (done) {
+                return false;
+            }
+
+            if (sourceMode == ASYNC) {
+                return actual.tryOnNext(null);
+            }
+
+            Optional<R> o;
+
+            try {
+                o = ObjectHelper.requireNonNull(mapper.apply(t), "The mapper returned a null Optional");
+            } catch (Throwable ex) {
+                Exceptions.throwIfFatal(ex);
+                fail(ex);
+                return false;
+            }
+
+            if (o.isPresent()) {
+                return actual.tryOnNext(o.get());
+            }
+            return false;
+        }
+
+        @Override
+        public int requestFusion(int mode) {
+            return transitiveBoundaryFusion(mode);
+        }
+
+        @Override
+        public R poll() throws Exception {
+            for (;;) {
+                T t = qs.poll();
+
+                if (t == null) {
+                    return null;
+                }
+
+                Optional<R> o = mapper.apply(t);
+
+                if (o.isPresent()) {
+                    return o.get();
+                }
+
+                if (sourceMode != SYNC) {
+                    s.request(1);
+                }
+            }
+        }
     }
 }
