@@ -16,6 +16,12 @@
 
 package hu.akarnokd.rxjava2.interop;
 
-public class RxJava2Jdk8InteropTest {
+import org.junit.Test;
 
+public class FlowableInteropTest {
+
+    @Test
+    public void utilityClass() {
+        TestHelper.checkUtilityClass(FlowableInterop.class);
+    }
 }
