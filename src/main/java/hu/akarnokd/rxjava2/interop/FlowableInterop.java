@@ -21,7 +21,6 @@ import java.util.concurrent.*;
 import java.util.stream.*;
 
 import io.reactivex.*;
-import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.Function;
 import io.reactivex.plugins.RxJavaPlugins;
 import io.reactivex.processors.AsyncProcessor;
@@ -145,13 +144,7 @@ public final class FlowableInterop {
      * @return the Function to be used with {@code Flowable.to}.
      */
     public static <T> Function<Flowable<T>, Stream<T>> toStream() {
-        return f -> {
-            Iterator<T> it = f.blockingIterable().iterator();
-
-            Stream<T> s = StreamSupport.stream(Spliterators.spliterator(it, 0, 0), false);
-
-            return s.onClose(() -> ((Disposable)it).dispose());
-        };
+        return f -> ZeroOneIterator.toStream(f.blockingIterable().iterator());
     }
 
     /**

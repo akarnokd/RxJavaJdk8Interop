@@ -76,7 +76,8 @@ public class FlowableInteropTest {
 
     @Test
     public void fromFutureError() {
-        TestSubscriber<Object> ts = FlowableInterop.fromFuture(CompletableFuture.supplyAsync(() -> { throw new IllegalArgumentException(); }))
+        TestSubscriber<Object> ts = FlowableInterop.fromFuture(
+                CompletableFuture.supplyAsync(() -> { throw new IllegalArgumentException(); }))
         .test()
         .awaitDone(5, TimeUnit.SECONDS)
         .assertFailure(CompletionException.class);

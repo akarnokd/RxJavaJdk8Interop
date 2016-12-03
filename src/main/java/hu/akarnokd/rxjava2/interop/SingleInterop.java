@@ -16,9 +16,11 @@
 
 package hu.akarnokd.rxjava2.interop;
 
-import java.util.concurrent.CompletionStage;
+import java.util.NoSuchElementException;
+import java.util.concurrent.*;
 import java.util.stream.Stream;
 
+import hu.akarnokd.rxjava2.subjects.SingleSubject;
 import io.reactivex.Single;
 import io.reactivex.functions.Function;
 
@@ -35,14 +37,55 @@ public final class SingleInterop {
         throw new IllegalStateException("No instances!");
     }
 
-    public static <T> Function<Single<T>, CompletionStage<T>> singleGet() {
-        // TODO implement
-        throw new UnsupportedOperationException();
+    /**
+     * Returns a CompletionStage that signals the success value or error of the
+     * source Single.
+     * @param <T> the value type
+     * @return the new Function to be used with {@code Single.to()}
+     */
+    public static <T> Function<Single<T>, CompletionStage<T>> get() {
+        return c -> {
+            CompletableFuture<T> cf = new CompletableFuture<>();
+            c.subscribe(cf::complete, cf::completeExceptionally);
+            return cf;
+        };
     }
 
-    public static <T> Function<Single<T>, Stream<T>> singleToStream() {
-        // TODO implement
-        throw new UnsupportedOperationException();
+    /**
+     * Returns a blocking Stream of the single success value of the source Single.
+     * @param <T> the value type
+     * @return the new Function to be used with {@code Single.to()}
+     */
+    public static <T> Function<Single<T>, Stream<T>> toStream() {
+        return s -> {
+            ZeroOneIterator<T> zoi = new ZeroOneIterator<>();
+            s.subscribe(zoi);
+            return ZeroOneIterator.toStream(zoi);
+        };
+    }
+
+    /**
+     * Returns a Single that emits the value of the CompletionStage, its error or
+     * NoSuchElementException if it signals null.
+     * @param <T> the value type
+     * @param future the source CompletionStage instance
+     * @return the new Completable instance
+     */
+    public static <T> Single<T> fromFuture(CompletionStage<T> future) {
+        SingleSubject<T> cs = SingleSubject.create();
+
+        future.whenComplete((v, e) -> {
+            if (e != null) {
+                cs.onError(e);
+            } else 
+            if (v != null) {
+                cs.onSuccess(v);
+            } else {
+                cs.onError(new NoSuchElementException());
+            }
+        });
+
+        return cs;
     }
 
 }

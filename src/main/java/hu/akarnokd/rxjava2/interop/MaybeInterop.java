@@ -17,11 +17,13 @@
 package hu.akarnokd.rxjava2.interop;
 
 import java.util.Optional;
-import java.util.concurrent.CompletionStage;
+import java.util.concurrent.*;
 import java.util.stream.Stream;
 
+import hu.akarnokd.rxjava2.subjects.MaybeSubject;
 import io.reactivex.*;
 import io.reactivex.functions.Function;
+import io.reactivex.plugins.RxJavaPlugins;
 
 /**
  * Utility methods, sources and operators supporting RxJava 2 and the Jdk 8 API
@@ -36,24 +38,66 @@ public final class MaybeInterop {
         throw new IllegalStateException("No instances!");
     }
 
-    public static <T> Observable<T> maybeFromOptional(Optional<T> opt) {
-        // TODO implement
-        throw new UnsupportedOperationException();
+    /**
+     * Returns a Maybe that emits the value of the Optional or is
+     * empty if the Optional is also empty.
+     * @param <T> the value type
+     * @param opt the Optional value
+     * @return the new Maybe instance
+     */
+    public static <T> Maybe<T> fromOptional(Optional<T> opt) {
+        return opt.map(Maybe::just).orElse(Maybe.empty());
     }
 
-    public static <T> Maybe<T> maybeFromFuture(CompletionStage<T> cs) {
-        // TODO implement
-        throw new UnsupportedOperationException();
+    /**
+     * Returns a Maybe that emits the resulting value of the CompletionStage or
+     * its error, treating null as empty source.
+     * @param <T> the value type
+     * @param cs the source CompletionStage instance
+     * @return the new Maybe instance
+     */
+    public static <T> Maybe<T> fromFuture(CompletionStage<T> cs) {
+        MaybeSubject<T> ms = MaybeSubject.create();
+        cs.whenComplete((v, e) -> {
+            if (e != null) {
+                ms.onError(e);
+            } else
+            if (v != null) {
+                ms.onSuccess(v);
+            } else {
+                ms.onComplete();
+            }
+        });
+        return ms;
     }
 
-    public static <T> Function<Maybe<T>, CompletionStage<T>> maybeGet() {
-        // TODO implement
-        throw new UnsupportedOperationException();
+    /**
+     * Returns a CompletionStage that signals the single value or terminal event
+     * of the given Maybe source.
+     * <p>An empty Maybe will complete with a null value
+     * @param <T> the value type
+     * @return the Function to be used with {@code Maybe.to()}
+     */
+    public static <T> Function<Maybe<T>, CompletionStage<T>> get() {
+        return m -> {
+            CompletableFuture<T> cf = new CompletableFuture<>();
+            m.subscribe(cf::complete, cf::completeExceptionally, () -> cf.complete(null));
+            return cf;
+        };
     }
 
-    public static <T> Function<Maybe<T>, Stream<T>> maybeToStream() {
-        // TODO implement
-        throw new UnsupportedOperationException();
+    /**
+     * Returns a blocking Stream of a potentially zero or one value (or error) of
+     * the Maybe.
+     * @param <T> the value type
+     * @return the Function to be used with {@code Maybe.to()}
+     */
+    public static <T> Function<Maybe<T>, Stream<T>> toStream() {
+        return m -> {
+            ZeroOneIterator<T> zoi = new ZeroOneIterator<>();
+            m.subscribe(zoi);
+            return ZeroOneIterator.toStream(zoi);
+        };
     }
 
     /**
@@ -61,13 +105,20 @@ public final class MaybeInterop {
      * @param <T> the value type
      * @return the converter Function to be used with {@code Maybe.to()}.
      */
-    public static <T> Function<Maybe<T>, Optional<T>> maybeElement() {
+    public static <T> Function<Maybe<T>, Optional<T>> element() {
         return m -> Optional.ofNullable(m.blockingGet());
     }
 
-    public static <T, R> MaybeTransformer<T, R> maybeMapOptional(Function<? super T, Optional<R>> mapper) {
-        // TODO implement
-        throw new UnsupportedOperationException();
+    /**
+     * Maps the upstream value into an optional and extracts its optional value to be emitted towards
+     * the downstream if present.
+     * @param <T> the upstream value type
+     * @param <R> the result value type
+     * @param mapper the function receiving the upstream value and should return an Optional
+     * @return the Transformer instance to be used with {@code Flowable.compose()}
+     */
+    public static <T, R> MaybeTransformer<T, R> mapOptional(Function<? super T, Optional<R>> mapper) {
+        return m -> RxJavaPlugins.onAssembly(new MaybeMapOptional<>(m, mapper));
     }
 
 }

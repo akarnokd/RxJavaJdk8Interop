@@ -16,9 +16,10 @@
 
 package hu.akarnokd.rxjava2.interop;
 
-import java.util.concurrent.CompletionStage;
+import java.util.concurrent.*;
 import java.util.stream.Stream;
 
+import hu.akarnokd.rxjava2.subjects.CompletableSubject;
 import io.reactivex.Completable;
 import io.reactivex.functions.Function;
 
@@ -35,14 +36,48 @@ public final class CompletableInterop {
         throw new IllegalStateException("No instances!");
     }
 
-    public static <T> Function<Completable, CompletionStage<T>> completableAwait() {
-        // TODO implement
-        throw new UnsupportedOperationException();
+    /**
+     * Returns a CompletionStage that signals a null value or error if the Completable terminates.
+     * @param <T> the target value type (unused)
+     * @return the Function to be used with {@code Completable.to()}
+     */
+    public static <T> Function<Completable, CompletionStage<T>> await() {
+        return c -> {
+            CompletableFuture<T> cf = new CompletableFuture<>();
+            c.subscribe(() -> cf.complete(null), cf::completeExceptionally);
+            return cf;
+        };
     }
 
-    public static <T> Function<Completable, Stream<T>> completableToStream() {
-        // TODO implement
-        throw new UnsupportedOperationException();
+    /**
+     * Returns a blocking Stream that waits for the Completable's terminal event.
+     * @param <T> the value type
+     * @return the Function to be used with {@code Completable.to()}
+     */
+    public static <T> Function<Completable, Stream<T>> toStream() {
+        return c -> {
+            ZeroOneIterator<T> zoi = new ZeroOneIterator<>();
+            c.subscribe(zoi);
+            return ZeroOneIterator.toStream(zoi);
+        };
     }
 
+    /**
+     * Returns a Completable that terminates when the given CompletionStage terminates.
+     * @param future the source CompletionStage instance
+     * @return the new Completable instance
+     */
+    public static Completable fromFuture(CompletionStage<?> future) {
+        CompletableSubject cs = CompletableSubject.create();
+
+        future.whenComplete((v, e) -> {
+            if (e != null) {
+                cs.onError(e);
+            } else {
+                cs.onComplete();
+            }
+        });
+
+        return cs;
+    }
 }
