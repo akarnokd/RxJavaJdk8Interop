@@ -16,16 +16,33 @@
 
 package hu.akarnokd.rxjava2.interop;
 
+import java.util.concurrent.CompletionStage;
+import java.util.stream.Stream;
+
+import io.reactivex.Completable;
+import io.reactivex.functions.Function;
+
 /**
  * Utility methods, sources and operators supporting RxJava 2 and the Jdk 8 API
  * interoperation.
  * 
  * @since 0.1.0
  */
-public final class RxJava2Jdk8Interop {
+public final class CompletableInterop {
 
     /** Utility class. */
-    private RxJava2Jdk8Interop() {
-        throw new IllegalStateException("No instances");
+    private CompletableInterop() {
+        throw new IllegalStateException("No instances!");
     }
+
+    public static <T> Function<Completable, CompletionStage<T>> completableAwait() {
+        // TODO implement
+        throw new UnsupportedOperationException();
+    }
+
+    public static <T> Function<Completable, Stream<T>> completableToStream() {
+        // TODO implement
+        throw new UnsupportedOperationException();
+    }
+
 }
