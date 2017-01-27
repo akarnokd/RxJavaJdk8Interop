@@ -20,10 +20,10 @@ import java.util.Optional;
 import java.util.concurrent.*;
 import java.util.stream.Stream;
 
-import hu.akarnokd.rxjava2.subjects.MaybeSubject;
 import io.reactivex.*;
 import io.reactivex.functions.Function;
 import io.reactivex.plugins.RxJavaPlugins;
+import io.reactivex.subjects.MaybeSubject;
 
 /**
  * Utility methods, sources and operators supporting RxJava 2 and the Jdk 8 API

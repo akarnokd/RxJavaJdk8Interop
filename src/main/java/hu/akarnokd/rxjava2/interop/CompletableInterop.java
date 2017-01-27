@@ -19,9 +19,9 @@ package hu.akarnokd.rxjava2.interop;
 import java.util.concurrent.*;
 import java.util.stream.Stream;
 
-import hu.akarnokd.rxjava2.subjects.CompletableSubject;
 import io.reactivex.Completable;
 import io.reactivex.functions.Function;
+import io.reactivex.subjects.CompletableSubject;
 
 /**
  * Utility methods, sources and operators supporting RxJava 2 and the Jdk 8 API

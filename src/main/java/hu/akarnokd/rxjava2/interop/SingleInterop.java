@@ -20,9 +20,9 @@ import java.util.NoSuchElementException;
 import java.util.concurrent.*;
 import java.util.stream.Stream;
 
-import hu.akarnokd.rxjava2.subjects.SingleSubject;
 import io.reactivex.Single;
 import io.reactivex.functions.Function;
+import io.reactivex.subjects.SingleSubject;
 
 /**
  * Utility methods, sources and operators supporting RxJava 2 and the Jdk 8 API
