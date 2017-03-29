@@ -12,7 +12,7 @@ RxJava 2 interop library for supporting Java 8 features such as Optional, Stream
 # Release
 
 ```groovy
-compile 'com.github.akarnokd:rxjava2-jdk8-interop:0.1.5'
+compile 'com.github.akarnokd:rxjava2-jdk8-interop:0.1.6'
 ```
 
 # Examples
