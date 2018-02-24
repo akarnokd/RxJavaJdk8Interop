@@ -38,9 +38,9 @@ SingleObserver<T>, CompletableObserver {
     Throwable error;
 
     Disposable d;
-    
+
     volatile boolean disposed;
-    
+
     ZeroOneIterator() {
         super(1);
     }
@@ -61,7 +61,7 @@ SingleObserver<T>, CompletableObserver {
         }
         return value != null;
     }
-    
+
     @Override
     public T next() {
         if (hasNext()) {
@@ -81,24 +81,24 @@ SingleObserver<T>, CompletableObserver {
             }
         }
     }
-    
+
     @Override
     public void onSuccess(T value) {
         this.value = value;
         countDown();
     }
-    
+
     @Override
     public void onError(Throwable e) {
         this.error = e;
         countDown();
     }
-    
+
     @Override
     public void onComplete() {
         countDown();
     }
-    
+
     @Override
     public void dispose() {
         disposed = true;
@@ -107,7 +107,7 @@ SingleObserver<T>, CompletableObserver {
             d.dispose();
         }
     }
-    
+
     @Override
     public boolean isDisposed() {
         return disposed;

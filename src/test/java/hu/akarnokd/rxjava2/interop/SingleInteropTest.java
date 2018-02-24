@@ -83,7 +83,7 @@ public class SingleInteropTest {
         List<Integer> list = Single.just(1)
         .to(SingleInterop.toStream())
         .collect(Collectors.toList());
-    
+
         Assert.assertEquals(Arrays.asList(1), list);
     }
 

@@ -50,7 +50,7 @@ public class CompletableInteropTest {
         List<Integer> list = Completable.complete()
         .to(CompletableInterop.<Integer>toStream())
         .collect(Collectors.toList());
-    
+
         Assert.assertTrue(list.isEmpty());
     }
 
@@ -84,7 +84,7 @@ public class CompletableInteropTest {
 
     @Test
     public void fromFutureError() {
-        TestObserver<Object> ts = MaybeInterop.fromFuture(
+        TestObserver<Void> ts = CompletableInterop.fromFuture(
                 CompletableFuture.supplyAsync(() -> { throw new IllegalArgumentException(); }))
         .test()
         .awaitDone(5, TimeUnit.SECONDS)
@@ -93,5 +93,4 @@ public class CompletableInteropTest {
         Throwable c = ts.errors().get(0).getCause();
         Assert.assertTrue(c.toString(), c instanceof IllegalArgumentException);
     }
-
 }

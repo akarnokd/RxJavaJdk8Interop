@@ -19,13 +19,17 @@ package hu.akarnokd.rxjava2.interop;
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.function.*;
 import java.util.stream.*;
 
 import org.junit.*;
+import org.reactivestreams.Subscriber;
 
 import io.reactivex.Flowable;
 import io.reactivex.internal.functions.Functions;
 import io.reactivex.internal.fuseable.QueueSubscription;
+import io.reactivex.internal.subscriptions.BooleanSubscription;
+import io.reactivex.plugins.RxJavaPlugins;
 import io.reactivex.processors.UnicastProcessor;
 import io.reactivex.subscribers.TestSubscriber;
 
@@ -330,5 +334,204 @@ public class FlowableInteropTest {
         .subscribeWith(ts)
         .assertOf(TestHelper.assertFusedSubscriber(QueueSubscription.ASYNC))
         .assertResult(-2, -4);
+    }
+
+    @Test
+    public void mapOptionalMapperCrash() {
+        Flowable.just(1)
+        .compose(FlowableInterop.mapOptional(v -> null))
+        .test()
+        .assertFailure(NullPointerException.class);
+    }
+
+    @Test
+    public void mapOptionalMapperCrashConditional() {
+        Flowable.just(1)
+        .compose(FlowableInterop.mapOptional(v -> null))
+        .filter(v -> true)
+        .test()
+        .assertFailure(NullPointerException.class);
+    }
+
+    @Test
+    public void mapOptionalCancelIgnoredConditional() {
+        new Flowable<Integer>() {
+            @Override
+            protected void subscribeActual(Subscriber<? super Integer> observer) {
+                observer.onSubscribe(new BooleanSubscription());
+                observer.onNext(1);
+                observer.onNext(2);
+            }
+        }
+        .compose(FlowableInterop.mapOptional(v -> { throw new IOException(); }))
+        .filter(v -> true)
+        .test()
+        .assertFailure(IOException.class);
+    }
+
+    @Test
+    public void mapOptionalCancelIgnored() {
+        new Flowable<Integer>() {
+            @Override
+            protected void subscribeActual(Subscriber<? super Integer> observer) {
+                observer.onSubscribe(new BooleanSubscription());
+                observer.onNext(1);
+                observer.onNext(2);
+            }
+        }
+        .compose(FlowableInterop.mapOptional(v -> { throw new IOException(); }))
+        .test()
+        .assertFailure(IOException.class);
+    }
+
+    @Test
+    @SuppressWarnings({ "unchecked", "rawtypes" })
+    public void collectorInitCrash() {
+        Flowable.range(1, 5)
+        .compose(FlowableInterop.collect(
+        new Collector<Integer, Object, List<Integer>>() {
+
+            @Override
+            public Supplier<Object> supplier() {
+                throw new IllegalArgumentException();
+            }
+
+            @Override
+            public BiConsumer<Object, Integer> accumulator() {
+                return (BiConsumer)Collectors.toList().accumulator();
+            }
+
+            @Override
+            public BinaryOperator<Object> combiner() {
+                return (BinaryOperator)Collectors.toList().combiner();
+            }
+
+            @Override
+            public Function<Object, List<Integer>> finisher() {
+                return (Function)Collectors.toList().finisher();
+            }
+
+            @Override
+            public Set<Characteristics> characteristics() {
+                return Collectors.toList().characteristics();
+            }
+        }))
+        .test()
+        .assertFailure(IllegalArgumentException.class);
+    }
+
+    @Test
+    public void collectorDoubleOnSubscribe() {
+        TestHelper.checkDoubleOnSubscribeFlowable(o ->
+            o.compose(FlowableInterop.collect(Collectors.toList()))
+        );
+    }
+
+    @Test
+    @SuppressWarnings({ "unchecked", "rawtypes" })
+    public void collectorAccumulatorCrash() {
+        List<Throwable> errors = TestHelper.trackPluginErrors();
+        try {
+            new Flowable<Integer>() {
+                @Override
+                protected void subscribeActual(Subscriber<? super Integer> observer) {
+                    observer.onSubscribe(new BooleanSubscription());
+                    observer.onNext(1);
+                    observer.onNext(2);
+                    observer.onComplete();
+                    observer.onError(new IOException());
+                }
+            }
+            .compose(FlowableInterop.collect(
+            new Collector<Integer, Object, List<Integer>>() {
+
+                @Override
+                public Supplier<Object> supplier() {
+                    return (Supplier)Collectors.toList().supplier();
+                }
+
+                @Override
+                public BiConsumer<Object, Integer> accumulator() {
+                    return (o, i) -> { throw new IllegalArgumentException(); };
+                }
+
+                @Override
+                public BinaryOperator<Object> combiner() {
+                    return (BinaryOperator)Collectors.toList().combiner();
+                }
+
+                @Override
+                public Function<Object, List<Integer>> finisher() {
+                    return (Function)Collectors.toList().finisher();
+                }
+
+                @Override
+                public Set<Characteristics> characteristics() {
+                    return Collectors.toList().characteristics();
+                }
+            }))
+            .test()
+            .assertFailure(IllegalArgumentException.class);
+
+            TestHelper.assertUndeliverable(errors, 0, IOException.class);
+        } finally {
+            RxJavaPlugins.reset();
+        }
+    }
+
+    @Test
+    @SuppressWarnings({ "unchecked", "rawtypes" })
+    public void collectorFinisherCrash() {
+        new Flowable<Integer>() {
+            @Override
+            protected void subscribeActual(Subscriber<? super Integer> observer) {
+                observer.onSubscribe(new BooleanSubscription());
+                observer.onNext(1);
+                observer.onNext(2);
+                observer.onComplete();
+            }
+        }
+        .compose(FlowableInterop.collect(
+        new Collector<Integer, Object, List<Integer>>() {
+
+            @Override
+            public Supplier<Object> supplier() {
+                return (Supplier)Collectors.toList().supplier();
+            }
+
+            @Override
+            public BiConsumer<Object, Integer> accumulator() {
+                return (BiConsumer)Collectors.toList().accumulator();
+            }
+
+            @Override
+            public BinaryOperator<Object> combiner() {
+                return (BinaryOperator)Collectors.toList().combiner();
+            }
+
+            @Override
+            public Function<Object, List<Integer>> finisher() {
+                return o -> { throw new IllegalArgumentException(); };
+            }
+
+            @Override
+            public Set<Characteristics> characteristics() {
+                return Collectors.toList().characteristics();
+            }
+        }))
+        .test()
+        .assertFailure(IllegalArgumentException.class);
+    }
+
+    @Test
+    public void collectCancel() {
+        boolean[] cancelled = { false };
+        Flowable.never()
+        .doOnCancel(() -> cancelled[0] = true)
+        .compose(FlowableInterop.collect(Collectors.toList()))
+        .test()
+        .cancel();
+
+        Assert.assertTrue(cancelled[0]);
     }
 }

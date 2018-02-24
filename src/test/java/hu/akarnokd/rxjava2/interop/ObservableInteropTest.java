@@ -19,14 +19,18 @@ package hu.akarnokd.rxjava2.interop;
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.function.*;
 import java.util.stream.*;
 
 import org.junit.*;
 
 import io.reactivex.Observable;
+import io.reactivex.Observer;
+import io.reactivex.disposables.Disposables;
 import io.reactivex.internal.functions.Functions;
 import io.reactivex.internal.fuseable.QueueSubscription;
 import io.reactivex.observers.TestObserver;
+import io.reactivex.plugins.RxJavaPlugins;
 import io.reactivex.subjects.UnicastSubject;
 
 public class ObservableInteropTest {
@@ -329,5 +333,175 @@ public class ObservableInteropTest {
         .subscribeWith(ts)
         .assertOf(TestHelper.assertFusedObserver(QueueSubscription.ASYNC))
         .assertResult(-2, -4);
+    }
+
+    @Test
+    public void mapOptionalMapperCrash() {
+        Observable.just(1)
+        .compose(ObservableInterop.mapOptional(v -> null))
+        .test()
+        .assertFailure(NullPointerException.class);
+    }
+
+    @Test
+    public void mapOptionalCancelIgnored() {
+        new Observable<Integer>() {
+            @Override
+            protected void subscribeActual(Observer<? super Integer> observer) {
+                observer.onSubscribe(Disposables.empty());
+                observer.onNext(1);
+                observer.onNext(2);
+            }
+        }
+        .compose(ObservableInterop.mapOptional(v -> { throw new IOException(); }))
+        .test()
+        .assertFailure(IOException.class);
+    }
+
+    @Test
+    @SuppressWarnings({ "unchecked", "rawtypes" })
+    public void collectorInitCrash() {
+        Observable.range(1, 5)
+        .compose(ObservableInterop.collect(
+        new Collector<Integer, Object, List<Integer>>() {
+
+            @Override
+            public Supplier<Object> supplier() {
+                throw new IllegalArgumentException();
+            }
+
+            @Override
+            public BiConsumer<Object, Integer> accumulator() {
+                return (BiConsumer)Collectors.toList().accumulator();
+            }
+
+            @Override
+            public BinaryOperator<Object> combiner() {
+                return (BinaryOperator)Collectors.toList().combiner();
+            }
+
+            @Override
+            public Function<Object, List<Integer>> finisher() {
+                return (Function)Collectors.toList().finisher();
+            }
+
+            @Override
+            public Set<Characteristics> characteristics() {
+                return Collectors.toList().characteristics();
+            }
+        }))
+        .test()
+        .assertFailure(IllegalArgumentException.class);
+    }
+
+    @Test
+    public void collectorDoubleOnSubscribe() {
+        TestHelper.checkDoubleOnSubscribeObservable(o ->
+            o.compose(ObservableInterop.collect(Collectors.toList()))
+        );
+    }
+
+    @Test
+    public void dispose() {
+        TestHelper.checkDisposed(
+                Observable.never()
+                .compose(ObservableInterop.collect(Collectors.toList()))
+        );
+    }
+
+    @Test
+    @SuppressWarnings({ "unchecked", "rawtypes" })
+    public void collectorAccumulatorCrash() {
+        List<Throwable> errors = TestHelper.trackPluginErrors();
+        try {
+            new Observable<Integer>() {
+                @Override
+                protected void subscribeActual(Observer<? super Integer> observer) {
+                    observer.onSubscribe(Disposables.empty());
+                    observer.onNext(1);
+                    observer.onNext(2);
+                    observer.onComplete();
+                    observer.onError(new IOException());
+                }
+            }
+            .compose(ObservableInterop.collect(
+            new Collector<Integer, Object, List<Integer>>() {
+
+                @Override
+                public Supplier<Object> supplier() {
+                    return (Supplier)Collectors.toList().supplier();
+                }
+
+                @Override
+                public BiConsumer<Object, Integer> accumulator() {
+                    return (o, i) -> { throw new IllegalArgumentException(); };
+                }
+
+                @Override
+                public BinaryOperator<Object> combiner() {
+                    return (BinaryOperator)Collectors.toList().combiner();
+                }
+
+                @Override
+                public Function<Object, List<Integer>> finisher() {
+                    return (Function)Collectors.toList().finisher();
+                }
+
+                @Override
+                public Set<Characteristics> characteristics() {
+                    return Collectors.toList().characteristics();
+                }
+            }))
+            .test()
+            .assertFailure(IllegalArgumentException.class);
+
+            TestHelper.assertUndeliverable(errors, 0, IOException.class);
+        } finally {
+            RxJavaPlugins.reset();
+        }
+    }
+
+    @Test
+    @SuppressWarnings({ "unchecked", "rawtypes" })
+    public void collectorFinisherCrash() {
+        new Observable<Integer>() {
+            @Override
+            protected void subscribeActual(Observer<? super Integer> observer) {
+                observer.onSubscribe(Disposables.empty());
+                observer.onNext(1);
+                observer.onNext(2);
+                observer.onComplete();
+            }
+        }
+        .compose(ObservableInterop.collect(
+        new Collector<Integer, Object, List<Integer>>() {
+
+            @Override
+            public Supplier<Object> supplier() {
+                return (Supplier)Collectors.toList().supplier();
+            }
+
+            @Override
+            public BiConsumer<Object, Integer> accumulator() {
+                return (BiConsumer)Collectors.toList().accumulator();
+            }
+
+            @Override
+            public BinaryOperator<Object> combiner() {
+                return (BinaryOperator)Collectors.toList().combiner();
+            }
+
+            @Override
+            public Function<Object, List<Integer>> finisher() {
+                return o -> { throw new IllegalArgumentException(); };
+            }
+
+            @Override
+            public Set<Characteristics> characteristics() {
+                return Collectors.toList().characteristics();
+            }
+        }))
+        .test()
+        .assertFailure(IllegalArgumentException.class);
     }
 }

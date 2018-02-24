@@ -21,7 +21,7 @@ import java.util.stream.Collector;
 
 import org.reactivestreams.*;
 
-import io.reactivex.Flowable;
+import io.reactivex.*;
 import io.reactivex.exceptions.Exceptions;
 import io.reactivex.internal.subscriptions.*;
 import io.reactivex.plugins.RxJavaPlugins;
@@ -66,7 +66,7 @@ final class FlowableCollector<T, A, R> extends Flowable<R> {
     }
 
     static final class CollectorSubscriber<T, A, R> extends DeferredScalarSubscription<R>
-    implements Subscriber<T> {
+    implements FlowableSubscriber<T> {
 
         private static final long serialVersionUID = 2129956429647866524L;
 

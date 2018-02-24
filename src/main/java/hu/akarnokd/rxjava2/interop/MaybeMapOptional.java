@@ -35,27 +35,27 @@ import io.reactivex.internal.functions.ObjectHelper;
 final class MaybeMapOptional<T, R> extends Maybe<R> {
 
     final MaybeSource<T> source;
-    
+
     final Function<? super T, Optional<R>> mapper;
 
     public MaybeMapOptional(MaybeSource<T> source, Function<? super T, Optional<R>> mapper) {
         this.source = source;
         this.mapper = mapper;
     }
-    
+
     @Override
     protected void subscribeActual(MaybeObserver<? super R> observer) {
         source.subscribe(new MapOptionalObserver<>(observer, mapper));
     }
-    
+
     static final class MapOptionalObserver<T, R> implements MaybeObserver<T>, Disposable {
-        
+
         final MaybeObserver<? super R> actual;
 
         final Function<? super T, Optional<R>> mapper;
 
         Disposable d;
-        
+
         public MapOptionalObserver(MaybeObserver<? super R> actual, Function<? super T, Optional<R>> mapper) {
             super();
             this.actual = actual;
@@ -76,7 +76,7 @@ final class MaybeMapOptional<T, R> extends Maybe<R> {
         public void onSubscribe(Disposable d) {
             if (DisposableHelper.validate(this.d, d)) {
                 this.d = d;
-                
+
                 actual.onSubscribe(this);
             }
         }
@@ -84,7 +84,7 @@ final class MaybeMapOptional<T, R> extends Maybe<R> {
         @Override
         public void onSuccess(T value) {
             Optional<R> v;
-            
+
             try {
                 v = ObjectHelper.requireNonNull(mapper.apply(value), "The mapper returned a null Optional");
             } catch (Throwable ex) {
@@ -92,7 +92,7 @@ final class MaybeMapOptional<T, R> extends Maybe<R> {
                 actual.onError(ex);
                 return;
             }
-            
+
             if (v.isPresent()) {
                 actual.onSuccess(v.get());
             } else {
@@ -110,6 +110,5 @@ final class MaybeMapOptional<T, R> extends Maybe<R> {
             actual.onComplete();
         }
 
-        
     }
 }

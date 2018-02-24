@@ -77,7 +77,7 @@ public final class SingleInterop {
         future.whenComplete((v, e) -> {
             if (e != null) {
                 cs.onError(e);
-            } else 
+            } else
             if (v != null) {
                 cs.onSuccess(v);
             } else {

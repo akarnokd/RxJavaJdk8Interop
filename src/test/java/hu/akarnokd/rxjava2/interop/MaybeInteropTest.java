@@ -18,11 +18,13 @@ package hu.akarnokd.rxjava2.interop;
 
 import java.util.*;
 import java.util.concurrent.*;
-import java.util.stream.Collectors;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.*;
 
 import org.junit.*;
 
-import io.reactivex.Maybe;
+import io.reactivex.*;
+import io.reactivex.disposables.*;
 import io.reactivex.observers.TestObserver;
 
 public class MaybeInteropTest {
@@ -99,7 +101,7 @@ public class MaybeInteropTest {
         List<Integer> list = Maybe.just(1)
         .to(MaybeInterop.toStream())
         .collect(Collectors.toList());
-    
+
         Assert.assertEquals(Arrays.asList(1), list);
     }
 
@@ -108,7 +110,7 @@ public class MaybeInteropTest {
         List<Integer> list = Maybe.<Integer>empty()
         .to(MaybeInterop.toStream())
         .collect(Collectors.toList());
-    
+
         Assert.assertTrue(list.isEmpty());
     }
 
@@ -167,5 +169,114 @@ public class MaybeInteropTest {
         .compose(MaybeInterop.mapOptional(v -> Optional.of(-v)))
         .test()
         .assertFailure(IllegalArgumentException.class);
+    }
+
+    @Test
+    public void mapOptionalMapperCrash() {
+        Maybe.just(1)
+        .compose(MaybeInterop.mapOptional(v -> null))
+        .test()
+        .assertFailure(NullPointerException.class);
+    }
+
+    @Test
+    public void badSource() {
+        TestHelper.checkDoubleOnSubscribeMaybe(m ->
+            m.compose(MaybeInterop.mapOptional(v -> Optional.of(v)))
+        );
+    }
+
+    @Test
+    public void disposed() {
+        TestHelper.checkDisposed(
+                Maybe.fromCallable(() -> 1)
+                .compose(MaybeInterop.mapOptional(v -> Optional.of(v)))
+        );
+    }
+
+    @Test
+    public void toStreamDelayed() {
+        Iterator<Long> it = Maybe.timer(100, TimeUnit.MILLISECONDS)
+        .to(MaybeInterop.toStream())
+        .iterator();
+
+        Assert.assertEquals(0L, it.next().longValue());
+
+        try {
+            it.next();
+            Assert.fail("Should have thrown");
+        } catch (NoSuchElementException expected) {
+            // expected
+        }
+    }
+
+    @Test
+    public void toStreamInterrupted() {
+        boolean[] disposed = { false };
+        Iterator<Long> it = Maybe.<Long>never()
+        .doOnDispose(() -> disposed[0] = true)
+        .to(MaybeInterop.toStream())
+        .iterator();
+
+        Thread.currentThread().interrupt();
+        try {
+            try {
+                it.hasNext();
+                Assert.fail("Should have thrown");
+            } catch (RuntimeException ex) {
+                Assert.assertTrue(ex.getCause() + "", ex.getCause() instanceof InterruptedException);
+            }
+            Assert.assertTrue(disposed[0]);
+        } finally {
+            Thread.interrupted();
+        }
+    }
+
+    @Test
+    public void lateSubscriberAlreadyCancelled() {
+        AtomicReference<MaybeObserver<? super Integer>> sub = new AtomicReference<>();
+        Stream<Integer> it = new Maybe<Integer>() {
+            @Override
+            protected void subscribeActual(MaybeObserver<? super Integer> observer) {
+                sub.set(observer);
+            }
+        }
+        .to(MaybeInterop.toStream());
+
+        it.close();
+
+        Disposable d1 = Disposables.empty();
+        sub.get().onSubscribe(d1);
+        Assert.assertTrue(d1.isDisposed());
+
+        Disposable d2 = Disposables.empty();
+        sub.get().onSubscribe(d2);
+        Assert.assertTrue(d2.isDisposed());
+    }
+
+    @Test
+    public void zeroOneDirect() {
+        ZeroOneIterator<Integer> z = Maybe.just(1).subscribeWith(new ZeroOneIterator<>());
+
+        Assert.assertEquals(1, z.next().intValue());
+
+        try {
+            z.next();
+            Assert.fail("Should have thrown");
+        } catch (NoSuchElementException expected) {
+            // expected
+        }
+    }
+
+
+    @Test
+    public void zeroOneDirectNever() {
+        ZeroOneIterator<Integer> z = Maybe.<Integer>never().subscribeWith(new ZeroOneIterator<>());
+
+        Assert.assertFalse(z.isDisposed());
+
+        z.dispose();
+
+        Assert.assertTrue(z.isDisposed());
     }
 }
