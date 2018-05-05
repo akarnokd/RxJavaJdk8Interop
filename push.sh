@@ -31,7 +31,8 @@ git remote add origin-pages https://${GITHUB_TOKEN}@${targetRepo} > /dev/null 2>
 # get the gh-pages
 git fetch --all
 git branch -a
-git checkout gh-pages
+git checkout -b gh-pages origin-pages/gh-pages
+
 
 # copy and overwrite new doc
 yes | cp -rfv ./build/docs/javadoc/ javadoc/
