@@ -17,26 +17,27 @@ if [ "$GITHUB_TOKEN" == "" ]; then
 	exit 0
 fi
 
-# create directory for gh-pages branch
-mkdir javadoc
-
-cd javadoc
-
 # prepare the git information
 git config --global user.email "travis@travis-ci.org"
 git config --global user.name "Travis CI"
 
-# clone repo again
-git clone https://github.com/akarnokd/RxJava2Jdk8Interop.git
-
 # get the gh-pages
-git checkout gh-pages
+git checkout -b gh-pages
+
+if [ -d "./build/docs/javadoc" ]; then
+  echo -e "The JavaDocs directory build/docs/javadoc is missing."
+  ls
+  exit 0
+fi
 
 # copy and overwrite new doc
-yes | cp -rf ../build/docs/javadoc javadoc
+yes | cp -rfv ./build/docs/javadoc .
 
 # stage all changed and new files
-git add --all
+git add . *.html
+git add . *.css
+git add . *.js
+git add package-list
 
 # commit all
 git commit --message "Travis build: $TRAVIS_BUILD_NUMBER"
