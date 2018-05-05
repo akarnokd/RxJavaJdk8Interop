@@ -36,6 +36,8 @@ git fetch --all
 git branch -a
 git checkout -b gh-pages origin-pages/gh-pages
 
+# remove old dir
+rm -rf javadoc
 
 # copy and overwrite new doc
 yes | cp -rfv ./build/docs/javadoc/ javadoc/
