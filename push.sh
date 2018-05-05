@@ -23,6 +23,7 @@ git config --global user.name "Travis CI"
 
 # get the gh-pages
 git fetch
+git branch -a
 git checkout gh-pages
 
 # copy and overwrite new doc
