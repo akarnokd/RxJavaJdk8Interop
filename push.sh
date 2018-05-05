@@ -22,16 +22,11 @@ git config --global user.email "travis@travis-ci.org"
 git config --global user.name "Travis CI"
 
 # get the gh-pages
-git checkout -b gh-pages
-
-if [ -d "./build/docs/javadoc" ]; then
-  echo -e "The JavaDocs directory build/docs/javadoc is missing."
-  find .
-  exit 0
-fi
+git fetch
+git checkout gh-pages
 
 # copy and overwrite new doc
-yes | cp -rfv ./build/docs/javadoc .
+yes | cp -rfv ./build/docs/javadoc/ javadoc/
 
 # stage all changed and new files
 git add . *.html
