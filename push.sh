@@ -22,7 +22,7 @@ git config --global user.email "travis@travis-ci.org"
 git config --global user.name "Travis CI"
 
 # get the gh-pages
-git fetch
+git fetch --all
 git branch -a
 git checkout gh-pages
 
