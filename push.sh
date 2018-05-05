@@ -21,10 +21,13 @@ fi
 git config --global user.email "travis@travis-ci.org"
 git config --global user.name "Travis CI"
 
+# setup the remote
+git remote add origin-pages https://${GITHUB_TOKEN}@github.com/akarnokd/RxJava2Jdk8Interop.git > /dev/null 2>&1
+
 # get the gh-pages
 git fetch --all
 git branch -a
-git checkout gh-pages
+git checkout -b origin-pages/gh-pages
 
 # copy and overwrite new doc
 yes | cp -rfv ./build/docs/javadoc/ javadoc/
@@ -33,13 +36,11 @@ yes | cp -rfv ./build/docs/javadoc/ javadoc/
 git add . *.html
 git add . *.css
 git add . *.js
-git add package-list
+git add 'javadoc/package-list'
 
 # commit all
 git commit --message "Travis build: $TRAVIS_BUILD_NUMBER"
 
-# setup the remote
-git remote add origin-pages https://${GITHUB_TOKEN}@github.com/akarnokd/RxJava2Jdk8Interop.git > /dev/null 2>&1
 
 # push it
 git push --quiet --set-upstream origin-pages gh-pages
