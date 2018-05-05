@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ObservableCollector.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">rxjava2-jdk8-interop</a> &gt; <a href="index.source.html" class="el_package">hu.akarnokd.rxjava2.interop</a> &gt; <span class="el_source">ObservableCollector.java</span></div><h1>ObservableCollector.java</h1><pre class="source lang-java linenums">/*
+ * Copyright 2016 David Karnok
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package hu.akarnokd.rxjava2.interop;
+
+import java.util.function.*;
+import java.util.stream.Collector;
+
+import io.reactivex.*;
+import io.reactivex.disposables.Disposable;
+import io.reactivex.exceptions.Exceptions;
+import io.reactivex.internal.disposables.*;
+import io.reactivex.internal.observers.DeferredScalarDisposable;
+import io.reactivex.plugins.RxJavaPlugins;
+
+/**
+ * Collect elements of the upstream with the help of the Collector's callback functions.
+ *
+ * @param &lt;T&gt; the upstream value type
+ * @param &lt;A&gt; the accumulated type
+ * @param &lt;R&gt; the result type
+ */
+final class ObservableCollector&lt;T, A, R&gt; extends Observable&lt;R&gt; {
+
+    final ObservableSource&lt;T&gt; source;
+
+    final Collector&lt;T, A, R&gt; collector;
+
+<span class="fc" id="L42">    ObservableCollector(ObservableSource&lt;T&gt; source, Collector&lt;T, A, R&gt; collector) {</span>
+<span class="fc" id="L43">        this.source = source;</span>
+<span class="fc" id="L44">        this.collector = collector;</span>
+<span class="fc" id="L45">    }</span>
+
+    @Override
+    protected void subscribeActual(Observer&lt;? super R&gt; s) {
+        A initialValue;
+        BiConsumer&lt;A, T&gt; accumulator;
+        Function&lt;A, R&gt; finisher;
+
+        try {
+<span class="fc" id="L54">            initialValue = collector.supplier().get();</span>
+
+<span class="fc" id="L56">            accumulator = collector.accumulator();</span>
+
+<span class="fc" id="L58">            finisher = collector.finisher();</span>
+<span class="fc" id="L59">        } catch (Throwable ex) {</span>
+<span class="fc" id="L60">            Exceptions.throwIfFatal(ex);</span>
+<span class="fc" id="L61">            EmptyDisposable.error(ex, s);</span>
+<span class="fc" id="L62">            return;</span>
+<span class="fc" id="L63">        }</span>
+
+<span class="fc" id="L65">        source.subscribe(new CollectorObserver&lt;&gt;(s, initialValue, accumulator, finisher));</span>
+<span class="fc" id="L66">    }</span>
+
+    static final class CollectorObserver&lt;T, A, R&gt; extends DeferredScalarDisposable&lt;R&gt;
+    implements Observer&lt;T&gt; {
+
+        private static final long serialVersionUID = 2129956429647866524L;
+
+        final BiConsumer&lt;A, T&gt; accumulator;
+
+        final Function&lt;A, R&gt; finisher;
+
+        A intermediate;
+
+        Disposable d;
+
+        boolean done;
+
+        public CollectorObserver(Observer&lt;? super R&gt; actual,
+                A initialValue, BiConsumer&lt;A, T&gt; accumulator, Function&lt;A, R&gt; finisher) {
+<span class="fc" id="L85">            super(actual);</span>
+<span class="fc" id="L86">            this.intermediate = initialValue;</span>
+<span class="fc" id="L87">            this.accumulator = accumulator;</span>
+<span class="fc" id="L88">            this.finisher = finisher;</span>
+<span class="fc" id="L89">        }</span>
+
+        @Override
+        public void onSubscribe(Disposable d) {
+<span class="fc bfc" id="L93" title="All 2 branches covered.">            if (DisposableHelper.validate(this.d, d)) {</span>
+<span class="fc" id="L94">                this.d = d;</span>
+
+<span class="fc" id="L96">                actual.onSubscribe(this);</span>
+            }
+<span class="fc" id="L98">        }</span>
+
+        @Override
+        public void onNext(T t) {
+<span class="fc bfc" id="L102" title="All 2 branches covered.">            if (!done) {</span>
+                try {
+<span class="fc" id="L104">                    accumulator.accept(intermediate, t);</span>
+<span class="fc" id="L105">                } catch (Throwable ex) {</span>
+<span class="fc" id="L106">                    Exceptions.throwIfFatal(ex);</span>
+<span class="fc" id="L107">                    d.dispose();</span>
+<span class="fc" id="L108">                    onError(ex);</span>
+<span class="fc" id="L109">                }</span>
+            }
+<span class="fc" id="L111">        }</span>
+
+        @Override
+        public void onError(Throwable t) {
+<span class="fc bfc" id="L115" title="All 2 branches covered.">            if (done) {</span>
+<span class="fc" id="L116">                RxJavaPlugins.onError(t);</span>
+            } else {
+<span class="fc" id="L118">                done = true;</span>
+<span class="fc" id="L119">                intermediate = null;</span>
+<span class="fc" id="L120">                actual.onError(t);</span>
+            }
+<span class="fc" id="L122">        }</span>
+
+        @Override
+        public void onComplete() {
+<span class="fc bfc" id="L126" title="All 2 branches covered.">            if (!done) {</span>
+                R r;
+
+                try {
+<span class="fc" id="L130">                    r = finisher.apply(intermediate);</span>
+<span class="fc" id="L131">                } catch (Throwable ex) {</span>
+<span class="fc" id="L132">                    Exceptions.throwIfFatal(ex);</span>
+<span class="fc" id="L133">                    onError(ex);</span>
+<span class="fc" id="L134">                    return;</span>
+<span class="fc" id="L135">                }</span>
+
+<span class="fc" id="L137">                intermediate = null;</span>
+<span class="fc" id="L138">                complete(r);</span>
+            }
+<span class="fc" id="L140">        }</span>
+
+        @Override
+        public void dispose() {
+<span class="fc" id="L144">            super.dispose();</span>
+<span class="fc" id="L145">            d.dispose();</span>
+<span class="fc" id="L146">        }</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.7.201606060606</span></div></body></html>

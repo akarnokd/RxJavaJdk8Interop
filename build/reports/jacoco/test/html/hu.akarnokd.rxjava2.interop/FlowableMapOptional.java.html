@@ -1,0 +1,198 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>FlowableMapOptional.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">rxjava2-jdk8-interop</a> &gt; <a href="index.source.html" class="el_package">hu.akarnokd.rxjava2.interop</a> &gt; <span class="el_source">FlowableMapOptional.java</span></div><h1>FlowableMapOptional.java</h1><pre class="source lang-java linenums">/*
+ * Copyright 2016 David Karnok
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package hu.akarnokd.rxjava2.interop;
+
+import java.util.Optional;
+
+import org.reactivestreams.*;
+
+import io.reactivex.Flowable;
+import io.reactivex.exceptions.Exceptions;
+import io.reactivex.functions.Function;
+import io.reactivex.internal.functions.ObjectHelper;
+import io.reactivex.internal.fuseable.ConditionalSubscriber;
+import io.reactivex.internal.subscribers.*;
+
+/**
+ * Maps an upstream value into an Optional and emits its value if not empty.
+ *
+ * @param &lt;T&gt; the upstream value type
+ * @param &lt;R&gt; the result value type
+ */
+final class FlowableMapOptional&lt;T, R&gt; extends Flowable&lt;R&gt; {
+
+    final Publisher&lt;T&gt; source;
+
+    final Function&lt;? super T, Optional&lt;R&gt;&gt; mapper;
+
+<span class="fc" id="L42">    FlowableMapOptional(Publisher&lt;T&gt; source, Function&lt;? super T, Optional&lt;R&gt;&gt; mapper) {</span>
+<span class="fc" id="L43">        this.source = source;</span>
+<span class="fc" id="L44">        this.mapper = mapper;</span>
+<span class="fc" id="L45">    }</span>
+
+    @Override
+    protected void subscribeActual(Subscriber&lt;? super R&gt; s) {
+<span class="fc bfc" id="L49" title="All 2 branches covered.">        if (s instanceof ConditionalSubscriber) {</span>
+<span class="fc" id="L50">            source.subscribe(new MapOptionalConditionalSubscriber&lt;&gt;((ConditionalSubscriber&lt;? super R&gt;)s, mapper));</span>
+        } else {
+<span class="fc" id="L52">            source.subscribe(new MapOptionalSubscriber&lt;&gt;(s, mapper));</span>
+        }
+<span class="fc" id="L54">    }</span>
+
+    static final class MapOptionalSubscriber&lt;T, R&gt; extends BasicFuseableSubscriber&lt;T, R&gt;
+    implements ConditionalSubscriber&lt;T&gt; {
+
+        final Function&lt;? super T, Optional&lt;R&gt;&gt; mapper;
+
+        public MapOptionalSubscriber(Subscriber&lt;? super R&gt; actual, Function&lt;? super T, Optional&lt;R&gt;&gt; mapper) {
+<span class="fc" id="L62">            super(actual);</span>
+<span class="fc" id="L63">            this.mapper = mapper;</span>
+<span class="fc" id="L64">        }</span>
+
+        @Override
+        public void onNext(T t) {
+<span class="fc bfc" id="L68" title="All 2 branches covered.">            if (!tryOnNext(t)) {</span>
+<span class="fc" id="L69">                s.request(1);</span>
+            }
+<span class="fc" id="L71">        }</span>
+
+        @Override
+        public boolean tryOnNext(T t) {
+<span class="fc bfc" id="L75" title="All 2 branches covered.">            if (done) {</span>
+<span class="fc" id="L76">                return false;</span>
+            }
+
+<span class="fc bfc" id="L79" title="All 2 branches covered.">            if (sourceMode == ASYNC) {</span>
+<span class="fc" id="L80">                actual.onNext(null);</span>
+<span class="fc" id="L81">                return true;</span>
+            }
+
+            Optional&lt;R&gt; o;
+
+            try {
+<span class="fc" id="L87">                o = ObjectHelper.requireNonNull(mapper.apply(t), &quot;The mapper returned a null Optional&quot;);</span>
+<span class="fc" id="L88">            } catch (Throwable ex) {</span>
+<span class="fc" id="L89">                Exceptions.throwIfFatal(ex);</span>
+<span class="fc" id="L90">                fail(ex);</span>
+<span class="fc" id="L91">                return false;</span>
+<span class="fc" id="L92">            }</span>
+
+<span class="fc bfc" id="L94" title="All 2 branches covered.">            if (o.isPresent()) {</span>
+<span class="fc" id="L95">                actual.onNext(o.get());</span>
+<span class="fc" id="L96">                return true;</span>
+            }
+<span class="fc" id="L98">            return false;</span>
+        }
+
+        @Override
+        public int requestFusion(int mode) {
+<span class="fc" id="L103">            return transitiveBoundaryFusion(mode);</span>
+        }
+
+        @Override
+        public R poll() throws Exception {
+            for (;;) {
+<span class="fc" id="L109">                T t = qs.poll();</span>
+
+<span class="fc bfc" id="L111" title="All 2 branches covered.">                if (t == null) {</span>
+<span class="fc" id="L112">                    return null;</span>
+                }
+
+<span class="fc" id="L115">                Optional&lt;R&gt; o = mapper.apply(t);</span>
+
+<span class="fc bfc" id="L117" title="All 2 branches covered.">                if (o.isPresent()) {</span>
+<span class="fc" id="L118">                    return o.get();</span>
+                }
+
+<span class="fc bfc" id="L121" title="All 2 branches covered.">                if (sourceMode != SYNC) {</span>
+<span class="fc" id="L122">                    s.request(1);</span>
+                }
+<span class="fc" id="L124">            }</span>
+        }
+    }
+
+    static final class MapOptionalConditionalSubscriber&lt;T, R&gt; extends BasicFuseableConditionalSubscriber&lt;T, R&gt;
+    implements ConditionalSubscriber&lt;T&gt; {
+
+        final Function&lt;? super T, Optional&lt;R&gt;&gt; mapper;
+
+        public MapOptionalConditionalSubscriber(ConditionalSubscriber&lt;? super R&gt; actual, Function&lt;? super T, Optional&lt;R&gt;&gt; mapper) {
+<span class="fc" id="L134">            super(actual);</span>
+<span class="fc" id="L135">            this.mapper = mapper;</span>
+<span class="fc" id="L136">        }</span>
+
+        @Override
+        public void onNext(T t) {
+<span class="fc bfc" id="L140" title="All 2 branches covered.">            if (!tryOnNext(t)) {</span>
+<span class="fc" id="L141">                s.request(1);</span>
+            }
+<span class="fc" id="L143">        }</span>
+
+        @Override
+        public boolean tryOnNext(T t) {
+<span class="fc bfc" id="L147" title="All 2 branches covered.">            if (done) {</span>
+<span class="fc" id="L148">                return false;</span>
+            }
+
+<span class="fc bfc" id="L151" title="All 2 branches covered.">            if (sourceMode == ASYNC) {</span>
+<span class="fc" id="L152">                return actual.tryOnNext(null);</span>
+            }
+
+            Optional&lt;R&gt; o;
+
+            try {
+<span class="fc" id="L158">                o = ObjectHelper.requireNonNull(mapper.apply(t), &quot;The mapper returned a null Optional&quot;);</span>
+<span class="fc" id="L159">            } catch (Throwable ex) {</span>
+<span class="fc" id="L160">                Exceptions.throwIfFatal(ex);</span>
+<span class="fc" id="L161">                fail(ex);</span>
+<span class="fc" id="L162">                return false;</span>
+<span class="fc" id="L163">            }</span>
+
+<span class="fc bfc" id="L165" title="All 2 branches covered.">            if (o.isPresent()) {</span>
+<span class="fc" id="L166">                return actual.tryOnNext(o.get());</span>
+            }
+<span class="fc" id="L168">            return false;</span>
+        }
+
+        @Override
+        public int requestFusion(int mode) {
+<span class="fc" id="L173">            return transitiveBoundaryFusion(mode);</span>
+        }
+
+        @Override
+        public R poll() throws Exception {
+            for (;;) {
+<span class="fc" id="L179">                T t = qs.poll();</span>
+
+<span class="fc bfc" id="L181" title="All 2 branches covered.">                if (t == null) {</span>
+<span class="fc" id="L182">                    return null;</span>
+                }
+
+<span class="fc" id="L185">                Optional&lt;R&gt; o = mapper.apply(t);</span>
+
+<span class="fc bfc" id="L187" title="All 2 branches covered.">                if (o.isPresent()) {</span>
+<span class="fc" id="L188">                    return o.get();</span>
+                }
+
+<span class="fc bfc" id="L191" title="All 2 branches covered.">                if (sourceMode != SYNC) {</span>
+<span class="fc" id="L192">                    s.request(1);</span>
+                }
+<span class="fc" id="L194">            }</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.7.201606060606</span></div></body></html>

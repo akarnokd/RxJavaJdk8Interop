@@ -1,0 +1,196 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ObservableInterop.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">rxjava2-jdk8-interop</a> &gt; <a href="index.source.html" class="el_package">hu.akarnokd.rxjava2.interop</a> &gt; <span class="el_source">ObservableInterop.java</span></div><h1>ObservableInterop.java</h1><pre class="source lang-java linenums">/*
+ * Copyright 2016 David Karnok
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package hu.akarnokd.rxjava2.interop;
+
+import java.util.*;
+import java.util.concurrent.*;
+import java.util.stream.*;
+
+import io.reactivex.Observable;
+import io.reactivex.ObservableTransformer;
+import io.reactivex.functions.Function;
+import io.reactivex.plugins.RxJavaPlugins;
+import io.reactivex.subjects.AsyncSubject;
+
+/**
+ * Utility methods, sources and operators supporting RxJava 2 and the Jdk 8 API
+ * interoperation.
+ * 
+ * @since 0.1.0
+ */
+public final class ObservableInterop {
+
+    /** Utility class. */
+<span class="fc" id="L38">    private ObservableInterop() {</span>
+<span class="fc" id="L39">        throw new IllegalStateException(&quot;No instances!&quot;);</span>
+    }
+
+    /**
+     * Wrap a Stream into a Observable.
+     * &lt;p&gt;Note that Streams can only be consumed once and non-concurrently.
+     * @param &lt;T&gt; the value type
+     * @param stream the source Stream
+     * @return the new Observable instance
+     */
+    public static &lt;T&gt; Observable&lt;T&gt; fromStream(Stream&lt;T&gt; stream) {
+<span class="fc" id="L50">        return Observable.fromIterable(() -&gt; stream.iterator());</span>
+    }
+
+    /**
+     * Returns a Observable for the value (or lack of) in the given Optional.
+     * @param &lt;T&gt; the value type
+     * @param opt the optional to wrap
+     * @return the new Observable instance
+     */
+    public static &lt;T&gt; Observable&lt;T&gt; fromOptional(Optional&lt;T&gt; opt) {
+<span class="fc" id="L60">        return opt.map(Observable::just).orElse(Observable.empty());</span>
+    }
+
+    /**
+     * Create a Observable that signals the terminal value or error of the given
+     * CompletionStage.
+     * &lt;p&gt;Cancelling the Observable subscription doesn't cancel the CompletionStage.
+     * @param &lt;T&gt; the value type
+     * @param cs the CompletionStage instance
+     * @return the new Observable instance
+     */
+    public static &lt;T&gt; Observable&lt;T&gt; fromFuture(CompletionStage&lt;T&gt; cs) {
+<span class="fc" id="L72">        AsyncSubject&lt;T&gt; ap = AsyncSubject.create();</span>
+<span class="fc" id="L73">        cs.whenComplete((v, e) -&gt; {</span>
+<span class="fc bfc" id="L74" title="All 2 branches covered.">            if (e != null) {</span>
+<span class="fc" id="L75">                ap.onError(e);</span>
+            } else {
+<span class="fc" id="L77">                ap.onNext(v);</span>
+<span class="fc" id="L78">                ap.onComplete();</span>
+            }
+<span class="fc" id="L80">        });</span>
+<span class="fc" id="L81">        return ap;</span>
+    }
+
+    /**
+     * Collect the elements of the Observable via the help of Collector and its callback
+     * functions.
+     * @param &lt;T&gt; the upstream value type
+     * @param &lt;A&gt; the accumulated type
+     * @param &lt;R&gt; the result type
+     * @param collector the Collector object providing the callbacks
+     * @return the Transformer instance to be used with {@code Observable.compose()}
+     */
+    public static &lt;T, A, R&gt; ObservableTransformer&lt;T, R&gt; collect(Collector&lt;T, A, R&gt; collector) {
+<span class="fc" id="L94">        return f -&gt; RxJavaPlugins.onAssembly(new ObservableCollector&lt;&gt;(f, collector));</span>
+    }
+
+    /**
+     * Returns a CompletionStage that signals the first element of the Observable
+     * or a NoSuchElementException if the Observable is empty.
+     * @param &lt;T&gt; the value type
+     * @return the Function to be used via {@code Observable.to}.
+     */
+    public static &lt;T&gt; Function&lt;Observable&lt;T&gt;, CompletionStage&lt;T&gt;&gt; first() {
+<span class="fc" id="L104">        return f -&gt; {</span>
+<span class="fc" id="L105">            CompletableFuture&lt;T&gt; cf = new CompletableFuture&lt;&gt;();</span>
+<span class="fc" id="L106">            f.firstOrError().subscribe(cf::complete, cf::completeExceptionally);</span>
+<span class="fc" id="L107">            return cf;</span>
+        };
+    }
+
+    /**
+     * Returns a CompletionStage that signals the single element of the Observable,
+     * IllegalArgumentException if the Observable is longer than 1 element
+     * or a NoSuchElementException if the Observable is empty.
+     * @param &lt;T&gt; the value type
+     * @return the Function to be used with {@code Observable.to}.
+     */
+    public static &lt;T&gt; Function&lt;Observable&lt;T&gt;, CompletionStage&lt;T&gt;&gt; single() {
+<span class="fc" id="L119">        return f -&gt; {</span>
+<span class="fc" id="L120">            CompletableFuture&lt;T&gt; cf = new CompletableFuture&lt;&gt;();</span>
+<span class="fc" id="L121">            f.singleOrError().subscribe(cf::complete, cf::completeExceptionally);</span>
+<span class="fc" id="L122">            return cf;</span>
+        };
+    }
+
+    /**
+     * Returns a CompletionStage that emits the last element of the Observable or
+     * NoSuchElementException if the Observable is empty.
+     * @param &lt;T&gt; the value type
+     * @return the Function to be used with {@code Observable.to}.
+     */
+    public static &lt;T&gt; Function&lt;Observable&lt;T&gt;, CompletionStage&lt;T&gt;&gt; last() {
+<span class="fc" id="L133">        return f -&gt; {</span>
+<span class="fc" id="L134">            CompletableFuture&lt;T&gt; cf = new CompletableFuture&lt;&gt;();</span>
+<span class="fc" id="L135">            f.lastOrError().subscribe(cf::complete, cf::completeExceptionally);</span>
+<span class="fc" id="L136">            return cf;</span>
+        };
+    }
+
+    /**
+     * Returns a blocking Stream of the elements of the Observable.
+     * &lt;p&gt;
+     * Closing the Stream will cancel the flow.
+     * @param &lt;T&gt; the value type
+     * @return the Function to be used with {@code Observable.to}.
+     */
+    public static &lt;T&gt; Function&lt;Observable&lt;T&gt;, Stream&lt;T&gt;&gt; toStream() {
+<span class="fc" id="L148">        return f -&gt; ZeroOneIterator.toStream(f.blockingIterable().iterator());</span>
+    }
+
+    /**
+     * Block until the source Observable emits its first item and return that as Optional.
+     * @param &lt;T&gt; the value type
+     * @return the converter Function to be used with {@code Observable.to()}.
+     */
+    public static &lt;T&gt; Function&lt;Observable&lt;T&gt;, Optional&lt;T&gt;&gt; firstElement() {
+<span class="fc" id="L157">        return o -&gt; Optional.ofNullable(o.blockingFirst(null));</span>
+    }
+
+    /**
+     * Block until the source Observable completes and return its last value as Optional.
+     * @param &lt;T&gt; the value type
+     * @return the converter Function to be used with {@code Observable.to()}.
+     */
+    public static &lt;T&gt; Function&lt;Observable&lt;T&gt;, Optional&lt;T&gt;&gt; lastElement() {
+<span class="fc" id="L166">        return o -&gt; Optional.ofNullable(o.blockingLast(null));</span>
+    }
+
+    /**
+     * Maps the upstream value into an optional and extracts its optional value to be emitted towards
+     * the downstream if present.
+     * @param &lt;T&gt; the upstream value type
+     * @param &lt;R&gt; the result value type
+     * @param mapper the function receiving the upstream value and should return an Optional
+     * @return the Transformer instance to be used with {@code Observable.compose()}
+     */
+    public static &lt;T, R&gt; ObservableTransformer&lt;T, R&gt; mapOptional(Function&lt;? super T, Optional&lt;R&gt;&gt; mapper) {
+<span class="fc" id="L178">        return f -&gt; RxJavaPlugins.onAssembly(new ObservableMapOptional&lt;&gt;(f, mapper));</span>
+    }
+
+    /**
+     * Map each value of the upstream into a Stream and flatten them into a single sequence.
+     * @param &lt;T&gt; the input value type
+     * @param &lt;R&gt; the Stream type
+     * @param mapper the function that returns a Stream for each upstream value
+     * @return the new Transformer instance
+     */
+    public static &lt;T, R&gt; ObservableTransformer&lt;T, R&gt; flatMapStream(Function&lt;? super T, ? extends Stream&lt;R&gt;&gt; mapper) {
+<span class="fc" id="L189">        return o -&gt; o.flatMapIterable(v -&gt; {</span>
+<span class="fc" id="L190">            Iterator&lt;R&gt; it = mapper.apply(v).iterator();</span>
+<span class="fc" id="L191">            return () -&gt; it;</span>
+        });
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.7.201606060606</span></div></body></html>

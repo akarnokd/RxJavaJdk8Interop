@@ -1,0 +1,195 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>FlowableInterop.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">rxjava2-jdk8-interop</a> &gt; <a href="index.source.html" class="el_package">hu.akarnokd.rxjava2.interop</a> &gt; <span class="el_source">FlowableInterop.java</span></div><h1>FlowableInterop.java</h1><pre class="source lang-java linenums">/*
+ * Copyright 2016 David Karnok
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package hu.akarnokd.rxjava2.interop;
+
+import java.util.*;
+import java.util.concurrent.*;
+import java.util.stream.*;
+
+import io.reactivex.*;
+import io.reactivex.functions.Function;
+import io.reactivex.plugins.RxJavaPlugins;
+import io.reactivex.processors.AsyncProcessor;
+
+/**
+ * Utility methods, sources and operators supporting RxJava 2 and the Jdk 8 API
+ * interoperation.
+ * 
+ * @since 0.1.0
+ */
+public final class FlowableInterop {
+
+    /** Utility class. */
+<span class="fc" id="L37">    private FlowableInterop() {</span>
+<span class="fc" id="L38">        throw new IllegalStateException(&quot;No instances!&quot;);</span>
+    }
+
+    /**
+     * Wrap a Stream into a Flowable.
+     * &lt;p&gt;Note that Streams can only be consumed once and non-concurrently.
+     * @param &lt;T&gt; the value type
+     * @param stream the source Stream
+     * @return the new Flowable instance
+     */
+    public static &lt;T&gt; Flowable&lt;T&gt; fromStream(Stream&lt;T&gt; stream) {
+<span class="fc" id="L49">        return Flowable.fromIterable(() -&gt; stream.iterator());</span>
+    }
+
+    /**
+     * Returns a Flowable for the value (or lack of) in the given Optional.
+     * @param &lt;T&gt; the value type
+     * @param opt the optional to wrap
+     * @return the new Flowable instance
+     */
+    public static &lt;T&gt; Flowable&lt;T&gt; fromOptional(Optional&lt;T&gt; opt) {
+<span class="fc" id="L59">        return opt.map(Flowable::just).orElse(Flowable.empty());</span>
+    }
+
+    /**
+     * Create a Flowable that signals the terminal value or error of the given
+     * CompletionStage.
+     * &lt;p&gt;Cancelling the Flowable subscription doesn't cancel the CompletionStage.
+     * @param &lt;T&gt; the value type
+     * @param cs the CompletionStage instance
+     * @return the new Flowable instance
+     */
+    public static &lt;T&gt; Flowable&lt;T&gt; fromFuture(CompletionStage&lt;T&gt; cs) {
+<span class="fc" id="L71">        AsyncProcessor&lt;T&gt; ap = AsyncProcessor.create();</span>
+<span class="fc" id="L72">        cs.whenComplete((v, e) -&gt; {</span>
+<span class="fc bfc" id="L73" title="All 2 branches covered.">            if (e != null) {</span>
+<span class="fc" id="L74">                ap.onError(e);</span>
+            } else {
+<span class="fc" id="L76">                ap.onNext(v);</span>
+<span class="fc" id="L77">                ap.onComplete();</span>
+            }
+<span class="fc" id="L79">        });</span>
+<span class="fc" id="L80">        return ap;</span>
+    }
+
+    /**
+     * Collect the elements of the Flowable via the help of Collector and its callback
+     * functions.
+     * @param &lt;T&gt; the upstream value type
+     * @param &lt;A&gt; the accumulated type
+     * @param &lt;R&gt; the result type
+     * @param collector the Collector object providing the callbacks
+     * @return the Transformer instance to be used with {@code Flowable.compose()}
+     */
+    public static &lt;T, A, R&gt; FlowableTransformer&lt;T, R&gt; collect(Collector&lt;T, A, R&gt; collector) {
+<span class="fc" id="L93">        return f -&gt; RxJavaPlugins.onAssembly(new FlowableCollector&lt;&gt;(f, collector));</span>
+    }
+
+    /**
+     * Returns a CompletionStage that signals the first element of the Flowable
+     * or a NoSuchElementException if the Flowable is empty.
+     * @param &lt;T&gt; the value type
+     * @return the Function to be used via {@code Flowable.to}.
+     */
+    public static &lt;T&gt; Function&lt;Flowable&lt;T&gt;, CompletionStage&lt;T&gt;&gt; first() {
+<span class="fc" id="L103">        return f -&gt; {</span>
+<span class="fc" id="L104">            CompletableFuture&lt;T&gt; cf = new CompletableFuture&lt;&gt;();</span>
+<span class="fc" id="L105">            f.firstOrError().subscribe(cf::complete, cf::completeExceptionally);</span>
+<span class="fc" id="L106">            return cf;</span>
+        };
+    }
+
+    /**
+     * Returns a CompletionStage that signals the single element of the Flowable,
+     * IllegalArgumentException if the Flowable is longer than 1 element
+     * or a NoSuchElementException if the Flowable is empty.
+     * @param &lt;T&gt; the value type
+     * @return the Function to be used with {@code Flowable.to}.
+     */
+    public static &lt;T&gt; Function&lt;Flowable&lt;T&gt;, CompletionStage&lt;T&gt;&gt; single() {
+<span class="fc" id="L118">        return f -&gt; {</span>
+<span class="fc" id="L119">            CompletableFuture&lt;T&gt; cf = new CompletableFuture&lt;&gt;();</span>
+<span class="fc" id="L120">            f.singleOrError().subscribe(cf::complete, cf::completeExceptionally);</span>
+<span class="fc" id="L121">            return cf;</span>
+        };
+    }
+
+    /**
+     * Returns a CompletionStage that emits the last element of the Flowable or
+     * NoSuchElementException if the Flowable is empty.
+     * @param &lt;T&gt; the value type
+     * @return the Function to be used with {@code Flowable.to}.
+     */
+    public static &lt;T&gt; Function&lt;Flowable&lt;T&gt;, CompletionStage&lt;T&gt;&gt; last() {
+<span class="fc" id="L132">        return f -&gt; {</span>
+<span class="fc" id="L133">            CompletableFuture&lt;T&gt; cf = new CompletableFuture&lt;&gt;();</span>
+<span class="fc" id="L134">            f.lastOrError().subscribe(cf::complete, cf::completeExceptionally);</span>
+<span class="fc" id="L135">            return cf;</span>
+        };
+    }
+
+    /**
+     * Returns a blocking Stream of the elements of the Flowable.
+     * &lt;p&gt;
+     * Closing the Stream will cancel the flow.
+     * @param &lt;T&gt; the value type
+     * @return the Function to be used with {@code Flowable.to}.
+     */
+    public static &lt;T&gt; Function&lt;Flowable&lt;T&gt;, Stream&lt;T&gt;&gt; toStream() {
+<span class="fc" id="L147">        return f -&gt; ZeroOneIterator.toStream(f.blockingIterable().iterator());</span>
+    }
+
+    /**
+     * Block until the source Flowable emits its first item and return that as Optional.
+     * @param &lt;T&gt; the value type
+     * @return the converter Function to be used with {@code Flowable.to()}.
+     */
+    public static &lt;T&gt; Function&lt;Flowable&lt;T&gt;, Optional&lt;T&gt;&gt; firstElement() {
+<span class="fc" id="L156">        return f -&gt; Optional.ofNullable(f.blockingFirst(null));</span>
+    }
+
+    /**
+     * Block until the source Flowable completes and return its last value as Optional.
+     * @param &lt;T&gt; the value type
+     * @return the converter Function to be used with {@code Flowable.to()}.
+     */
+    public static &lt;T&gt; Function&lt;Flowable&lt;T&gt;, Optional&lt;T&gt;&gt; lastElement() {
+<span class="fc" id="L165">        return f -&gt; Optional.ofNullable(f.blockingLast(null));</span>
+    }
+
+    /**
+     * Map each value of the upstream into a Stream and flatten them into a single sequence.
+     * @param &lt;T&gt; the input value type
+     * @param &lt;R&gt; the Stream type
+     * @param mapper the function that returns a Stream for each upstream value
+     * @return the Transformer instance to be used with {@code Flowable.compose()}
+     */
+    public static &lt;T, R&gt; FlowableTransformer&lt;T, R&gt; flatMapStream(Function&lt;? super T, ? extends Stream&lt;R&gt;&gt; mapper) {
+<span class="fc" id="L176">        return f -&gt; f.flatMapIterable(v -&gt; {</span>
+<span class="fc" id="L177">            Iterator&lt;R&gt; it = mapper.apply(v).iterator();</span>
+<span class="fc" id="L178">            return () -&gt; it;</span>
+        });
+    }
+
+    /**
+     * Maps the upstream value into an optional and extracts its optional value to be emitted towards
+     * the downstream if present.
+     * @param &lt;T&gt; the upstream value type
+     * @param &lt;R&gt; the result value type
+     * @param mapper the function receiving the upstream value and should return an Optional
+     * @return the Transformer instance to be used with {@code Flowable.compose()}
+     */
+    public static &lt;T, R&gt; FlowableTransformer&lt;T, R&gt; mapOptional(Function&lt;? super T, Optional&lt;R&gt;&gt; mapper) {
+<span class="fc" id="L191">        return f -&gt; RxJavaPlugins.onAssembly(new FlowableMapOptional&lt;&gt;(f, mapper));</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.7.201606060606</span></div></body></html>
