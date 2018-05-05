@@ -1,4 +1,7 @@
-#!/bin/sh
+#!/bin/bash
+# ----------------------------------------------------------
+# Automatically push back the generated JavaDocs to gh-pages
+# ----------------------------------------------------------
 # based on https://gist.github.com/willprice/e07efd73fb7f13f917ea
 
 # only for main pushes, for now
@@ -12,7 +15,7 @@ fi
 if [ "$GITHUB_TOKEN" == "" ]; then
 	echo -e "No access to GitHub, skipping JavaDocs pushback."
 	exit 0
-fid
+fi
 
 # create directory for gh-pages branch
 md javadoc
