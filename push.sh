@@ -42,3 +42,4 @@ git remote add origin-pages https://${GITHUB_TOKEN}@github.com/akarnokd/RxJava2J
 git push --quiet --set-upstream origin-pages gh-pages
 
 # we are done
+cd ..
