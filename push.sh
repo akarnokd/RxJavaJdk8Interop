@@ -18,7 +18,7 @@ if [ "$GITHUB_TOKEN" == "" ]; then
 fi
 
 # create directory for gh-pages branch
-md javadoc
+mkdir javadoc
 
 cd javadoc
 
@@ -26,8 +26,11 @@ cd javadoc
 git config --global user.email "travis@travis-ci.org"
 git config --global user.name "Travis CI"
 
+# clone repo again
+git clone https://github.com/akarnokd/RxJava2Jdk8Interop.git
+
 # get the gh-pages
-git checkout -b gh-pages
+git checkout gh-pages
 
 # copy and overwrite new doc
 yes | cp -rf ../build/docs/javadoc javadoc
