@@ -26,7 +26,7 @@ git checkout -b gh-pages
 
 if [ -d "./build/docs/javadoc" ]; then
   echo -e "The JavaDocs directory build/docs/javadoc is missing."
-  ls
+  find .
   exit 0
 fi
 
@@ -49,4 +49,3 @@ git remote add origin-pages https://${GITHUB_TOKEN}@github.com/akarnokd/RxJava2J
 git push --quiet --set-upstream origin-pages gh-pages
 
 # we are done
-cd ..
