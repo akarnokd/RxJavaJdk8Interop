@@ -9,7 +9,7 @@ targetRepo=github.com/akarnokd/RxJava2Jdk8Interop.git
 # =======================================================================
 
 # only for main pushes, for now
-# if [ "$TRAVIS_PULL_REQUEST" == "false" ] && [ "$TRAVIS_TAG" != "" ]; then
+# if [ "$TRAVIS_PULL_REQUEST" == "true" ] || [ "$TRAVIS_TAG" == "" ]; then
 if [ "$TRAVIS_PULL_REQUEST" == "true" ]; then
 	echo -e "Pull request detected, skipping JavaDocs pushback."
 	exit 0
