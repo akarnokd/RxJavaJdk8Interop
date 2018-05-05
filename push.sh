@@ -27,16 +27,16 @@ git remote add origin-pages https://${GITHUB_TOKEN}@github.com/akarnokd/RxJava2J
 # get the gh-pages
 git fetch --all
 git branch -a
-git checkout -b origin-pages/gh-pages
+git checkout -b gh-pages
 
 # copy and overwrite new doc
 yes | cp -rfv ./build/docs/javadoc/ javadoc/
 
 # stage all changed and new files
-git add . *.html
-git add . *.css
-git add . *.js
-git add 'javadoc/package-list'
+git add *.html
+git add *.css
+git add *.js
+git add javadoc/package-list
 
 # commit all
 git commit --message "Travis build: $TRAVIS_BUILD_NUMBER"
