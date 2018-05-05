@@ -28,6 +28,9 @@ git config --global user.name "Travis CI"
 # setup the remote
 git remote add origin-pages https://${GITHUB_TOKEN}@${targetRepo} > /dev/null 2>&1
 
+# stash changes due to chmod
+git stash
+
 # get the gh-pages
 git fetch --all
 git branch -a
