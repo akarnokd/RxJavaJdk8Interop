@@ -89,6 +89,49 @@ cs.whenComplete((v, e) -> {
 });
 ```
 
+## Return the only element as a CompletionStage
+
+### Single
+
+```java
+CompletionStage<Integer> cs = Single.just(1)
+.delay(1, TimeUnit.SECONDS)
+.to(SingleInterop.get());
+
+cs.whenComplete((v, e) -> {
+   System.out.println(v);
+   System.out.println(e);
+});
+```
+
+### Maybe
+
+```java
+CompletionStage<Integer> cs = Maybe.just(1)
+.delay(1, TimeUnit.SECONDS)
+.to(MaybeInterop.get());
+
+cs.whenComplete((v, e) -> {
+   System.out.println(v);
+   System.out.println(e);
+});
+```
+
+## Await completion as CompletionStage
+
+### Completable
+
+```java
+CompletionStage<Void> cs = Completable.complete()
+.delay(1, TimeUnit.SECONDS)
+.to(CompletableInterop.await());
+
+cs.whenComplete((v, e) -> {
+   System.out.println(v);
+   System.out.println(e);
+});
+```
+
 ## Return the first/last element optionally
 
 This is a blocking operation
