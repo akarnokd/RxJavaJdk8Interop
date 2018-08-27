@@ -66,7 +66,7 @@ final class FlowableMapOptional<T, R> extends Flowable<R> {
         @Override
         public void onNext(T t) {
             if (!tryOnNext(t)) {
-                s.request(1);
+                upstream.request(1);
             }
         }
 
@@ -77,7 +77,7 @@ final class FlowableMapOptional<T, R> extends Flowable<R> {
             }
 
             if (sourceMode == ASYNC) {
-                actual.onNext(null);
+                downstream.onNext(null);
                 return true;
             }
 
@@ -92,7 +92,7 @@ final class FlowableMapOptional<T, R> extends Flowable<R> {
             }
 
             if (o.isPresent()) {
-                actual.onNext(o.get());
+                downstream.onNext(o.get());
                 return true;
             }
             return false;
@@ -119,7 +119,7 @@ final class FlowableMapOptional<T, R> extends Flowable<R> {
                 }
 
                 if (sourceMode != SYNC) {
-                    s.request(1);
+                    upstream.request(1);
                 }
             }
         }
@@ -138,7 +138,7 @@ final class FlowableMapOptional<T, R> extends Flowable<R> {
         @Override
         public void onNext(T t) {
             if (!tryOnNext(t)) {
-                s.request(1);
+                upstream.request(1);
             }
         }
 
@@ -149,7 +149,7 @@ final class FlowableMapOptional<T, R> extends Flowable<R> {
             }
 
             if (sourceMode == ASYNC) {
-                return actual.tryOnNext(null);
+                return downstream.tryOnNext(null);
             }
 
             Optional<R> o;
@@ -163,7 +163,7 @@ final class FlowableMapOptional<T, R> extends Flowable<R> {
             }
 
             if (o.isPresent()) {
-                return actual.tryOnNext(o.get());
+                return downstream.tryOnNext(o.get());
             }
             return false;
         }
@@ -189,7 +189,7 @@ final class FlowableMapOptional<T, R> extends Flowable<R> {
                 }
 
                 if (sourceMode != SYNC) {
-                    s.request(1);
+                    upstream.request(1);
                 }
             }
         }

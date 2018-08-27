@@ -76,7 +76,7 @@ final class ObservableCollector<T, A, R> extends Observable<R> {
 
         A intermediate;
 
-        Disposable d;
+        Disposable upstream;
 
         boolean done;
 
@@ -90,10 +90,10 @@ final class ObservableCollector<T, A, R> extends Observable<R> {
 
         @Override
         public void onSubscribe(Disposable d) {
-            if (DisposableHelper.validate(this.d, d)) {
-                this.d = d;
+            if (DisposableHelper.validate(this.upstream, d)) {
+                this.upstream = d;
 
-                actual.onSubscribe(this);
+                downstream.onSubscribe(this);
             }
         }
 
@@ -104,7 +104,7 @@ final class ObservableCollector<T, A, R> extends Observable<R> {
                     accumulator.accept(intermediate, t);
                 } catch (Throwable ex) {
                     Exceptions.throwIfFatal(ex);
-                    d.dispose();
+                    upstream.dispose();
                     onError(ex);
                 }
             }
@@ -117,7 +117,7 @@ final class ObservableCollector<T, A, R> extends Observable<R> {
             } else {
                 done = true;
                 intermediate = null;
-                actual.onError(t);
+                downstream.onError(t);
             }
         }
 
@@ -142,7 +142,7 @@ final class ObservableCollector<T, A, R> extends Observable<R> {
         @Override
         public void dispose() {
             super.dispose();
-            d.dispose();
+            upstream.dispose();
         }
     }
 }

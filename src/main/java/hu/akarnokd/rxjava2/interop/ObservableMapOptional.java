@@ -62,7 +62,7 @@ final class ObservableMapOptional<T, R> extends Observable<R> {
             }
 
             if (sourceMode == ASYNC) {
-                actual.onNext(null);
+                downstream.onNext(null);
                 return;
             }
 
@@ -77,7 +77,7 @@ final class ObservableMapOptional<T, R> extends Observable<R> {
             }
 
             if (o.isPresent()) {
-                actual.onNext(o.get());
+                downstream.onNext(o.get());
             }
         }
 
@@ -89,7 +89,7 @@ final class ObservableMapOptional<T, R> extends Observable<R> {
         @Override
         public R poll() throws Exception {
             for (;;) {
-                T t = qs.poll();
+                T t = qd.poll();
 
                 if (t == null) {
                     return null;

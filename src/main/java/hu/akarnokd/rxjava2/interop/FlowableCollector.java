@@ -76,7 +76,7 @@ final class FlowableCollector<T, A, R> extends Flowable<R> {
 
         A intermediate;
 
-        Subscription s;
+        Subscription upstream;
 
         boolean done;
 
@@ -90,10 +90,10 @@ final class FlowableCollector<T, A, R> extends Flowable<R> {
 
         @Override
         public void onSubscribe(Subscription s) {
-            if (SubscriptionHelper.validate(this.s, s)) {
-                this.s = s;
+            if (SubscriptionHelper.validate(this.upstream, s)) {
+                this.upstream = s;
 
-                actual.onSubscribe(this);
+                downstream.onSubscribe(this);
 
                 s.request(Long.MAX_VALUE);
             }
@@ -106,7 +106,7 @@ final class FlowableCollector<T, A, R> extends Flowable<R> {
                     accumulator.accept(intermediate, t);
                 } catch (Throwable ex) {
                     Exceptions.throwIfFatal(ex);
-                    s.cancel();
+                    upstream.cancel();
                     onError(ex);
                 }
             }
@@ -119,7 +119,7 @@ final class FlowableCollector<T, A, R> extends Flowable<R> {
             } else {
                 done = true;
                 intermediate = null;
-                actual.onError(t);
+                downstream.onError(t);
             }
         }
 
@@ -144,7 +144,7 @@ final class FlowableCollector<T, A, R> extends Flowable<R> {
         @Override
         public void cancel() {
             super.cancel();
-            s.cancel();
+            upstream.cancel();
         }
     }
 }
