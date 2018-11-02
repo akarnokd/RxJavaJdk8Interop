@@ -23,6 +23,7 @@ import java.util.stream.*;
 import io.reactivex.Observable;
 import io.reactivex.ObservableTransformer;
 import io.reactivex.functions.Function;
+import io.reactivex.internal.functions.ObjectHelper;
 import io.reactivex.plugins.RxJavaPlugins;
 import io.reactivex.subjects.AsyncSubject;
 
@@ -41,13 +42,18 @@ public final class ObservableInterop {
 
     /**
      * Wrap a Stream into a Observable.
-     * <p>Note that Streams can only be consumed once and non-concurrently.
+     * <p>
+     * Note that Streams can only be consumed once and non-concurrently.
+     * <p>
+     * The operator closes the stream. Exceptions thrown by Stream.close()
+     * are routed to the global RxJavaPlugins.onError handler.
      * @param <T> the value type
      * @param stream the source Stream
      * @return the new Observable instance
      */
     public static <T> Observable<T> fromStream(Stream<T> stream) {
-        return Observable.fromIterable(() -> stream.iterator());
+        ObjectHelper.requireNonNull(stream, "stream is null");
+        return RxJavaPlugins.onAssembly(new ObservableFromStream<T>(stream));
     }
 
     /**
@@ -186,10 +192,7 @@ public final class ObservableInterop {
      * @return the new Transformer instance
      */
     public static <T, R> ObservableTransformer<T, R> flatMapStream(Function<? super T, ? extends Stream<R>> mapper) {
-        return o -> o.flatMapIterable(v -> {
-            Iterator<R> it = mapper.apply(v).iterator();
-            return () -> it;
-        });
+        return o -> o.concatMap(v -> fromStream(mapper.apply(v)));
     }
 
 }

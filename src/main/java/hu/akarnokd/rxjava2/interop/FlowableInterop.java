@@ -46,7 +46,7 @@ public final class FlowableInterop {
      * @return the new Flowable instance
      */
     public static <T> Flowable<T> fromStream(Stream<T> stream) {
-        return Flowable.fromIterable(() -> stream.iterator());
+        return RxJavaPlugins.onAssembly(new FlowableFromStream<T>(stream));
     }
 
     /**
@@ -173,10 +173,7 @@ public final class FlowableInterop {
      * @return the Transformer instance to be used with {@code Flowable.compose()}
      */
     public static <T, R> FlowableTransformer<T, R> flatMapStream(Function<? super T, ? extends Stream<R>> mapper) {
-        return f -> f.flatMapIterable(v -> {
-            Iterator<R> it = mapper.apply(v).iterator();
-            return () -> it;
-        });
+        return f -> f.concatMap(v -> fromStream(mapper.apply(v)));
     }
 
     /**
