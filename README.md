@@ -1,13 +1,13 @@
 # RxJavaJdk8Interop
 
 
-<a href='https://travis-ci.org/akarnokd/RxJavaJdk8Interop/builds'><img src='https://travis-ci.org/akarnokd/RxJavaJdk8Interop.svg?branch=master'></a>
-[![codecov.io](http://codecov.io/github/akarnokd/RxJavaJdk8Interop/coverage.svg?branch=master)](http://codecov.io/github/akarnokd/RxJavaJdk8Interop?branch=master)
+<a href='https://travis-ci.org/akarnokd/RxJavaJdk8Interop/builds'><img src='https://travis-ci.org/akarnokd/RxJavaJdk8Interop.svg?branch=3.x'></a>
+[![codecov.io](http://codecov.io/github/akarnokd/RxJavaJdk8Interop/coverage.svg?branch=3.x)](http://codecov.io/github/akarnokd/RxJavaJdk8Interop?branch=3.x)
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.github.akarnokd/rxjava3-jdk8-interop/badge.svg)](https://maven-badges.herokuapp.com/maven-central/com.github.akarnokd/rxjava3-jdk8-interop)
 
-RxJava 2.x: [![RxJava 2.x](https://maven-badges.herokuapp.com/maven-central/io.reactivex.rxjava2/rxjava/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.reactivex.rxjava2/rxjava)
+RxJava 3.x: [![RxJava 3.x](https://maven-badges.herokuapp.com/maven-central/io.reactivex.rxjava3/rxjava/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.reactivex.rxjava3/rxjava)
 
-RxJava 2 interop library for supporting Java 8 features such as Optional, Stream and CompletableFuture.
+RxJava 3 interop library for supporting Java 8 features such as Optional, Stream and CompletableFuture.
 
 # Release
 
