@@ -14,16 +14,16 @@
  * limitations under the License.
  */
 
-package hu.akarnokd.rxjava2.interop;
+package hu.akarnokd.rxjava3.interop;
 
 import java.util.function.*;
 import java.util.stream.Collector;
 
-import org.reactivestreams.*;
-
 import io.reactivex.*;
+import io.reactivex.disposables.Disposable;
 import io.reactivex.exceptions.Exceptions;
-import io.reactivex.internal.subscriptions.*;
+import io.reactivex.internal.disposables.*;
+import io.reactivex.internal.observers.DeferredScalarDisposable;
 import io.reactivex.plugins.RxJavaPlugins;
 
 /**
@@ -33,19 +33,19 @@ import io.reactivex.plugins.RxJavaPlugins;
  * @param <A> the accumulated type
  * @param <R> the result type
  */
-final class FlowableCollector<T, A, R> extends Flowable<R> {
+final class ObservableCollector<T, A, R> extends Observable<R> {
 
-    final Publisher<T> source;
+    final ObservableSource<T> source;
 
     final Collector<T, A, R> collector;
 
-    FlowableCollector(Publisher<T> source, Collector<T, A, R> collector) {
+    ObservableCollector(ObservableSource<T> source, Collector<T, A, R> collector) {
         this.source = source;
         this.collector = collector;
     }
 
     @Override
-    protected void subscribeActual(Subscriber<? super R> s) {
+    protected void subscribeActual(Observer<? super R> s) {
         A initialValue;
         BiConsumer<A, T> accumulator;
         Function<A, R> finisher;
@@ -58,15 +58,15 @@ final class FlowableCollector<T, A, R> extends Flowable<R> {
             finisher = collector.finisher();
         } catch (Throwable ex) {
             Exceptions.throwIfFatal(ex);
-            EmptySubscription.error(ex, s);
+            EmptyDisposable.error(ex, s);
             return;
         }
 
-        source.subscribe(new CollectorSubscriber<>(s, initialValue, accumulator, finisher));
+        source.subscribe(new CollectorObserver<>(s, initialValue, accumulator, finisher));
     }
 
-    static final class CollectorSubscriber<T, A, R> extends DeferredScalarSubscription<R>
-    implements FlowableSubscriber<T> {
+    static final class CollectorObserver<T, A, R> extends DeferredScalarDisposable<R>
+    implements Observer<T> {
 
         private static final long serialVersionUID = 2129956429647866524L;
 
@@ -76,11 +76,11 @@ final class FlowableCollector<T, A, R> extends Flowable<R> {
 
         A intermediate;
 
-        Subscription upstream;
+        Disposable upstream;
 
         boolean done;
 
-        public CollectorSubscriber(Subscriber<? super R> actual,
+        public CollectorObserver(Observer<? super R> actual,
                 A initialValue, BiConsumer<A, T> accumulator, Function<A, R> finisher) {
             super(actual);
             this.intermediate = initialValue;
@@ -89,13 +89,11 @@ final class FlowableCollector<T, A, R> extends Flowable<R> {
         }
 
         @Override
-        public void onSubscribe(Subscription s) {
-            if (SubscriptionHelper.validate(this.upstream, s)) {
-                this.upstream = s;
+        public void onSubscribe(Disposable d) {
+            if (DisposableHelper.validate(this.upstream, d)) {
+                this.upstream = d;
 
                 downstream.onSubscribe(this);
-
-                s.request(Long.MAX_VALUE);
             }
         }
 
@@ -106,7 +104,7 @@ final class FlowableCollector<T, A, R> extends Flowable<R> {
                     accumulator.accept(intermediate, t);
                 } catch (Throwable ex) {
                     Exceptions.throwIfFatal(ex);
-                    upstream.cancel();
+                    upstream.dispose();
                     onError(ex);
                 }
             }
@@ -142,9 +140,9 @@ final class FlowableCollector<T, A, R> extends Flowable<R> {
         }
 
         @Override
-        public void cancel() {
-            super.cancel();
-            upstream.cancel();
+        public void dispose() {
+            super.dispose();
+            upstream.dispose();
         }
     }
 }

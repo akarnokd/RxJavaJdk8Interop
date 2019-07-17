@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package hu.akarnokd.rxjava2.interop;
+package hu.akarnokd.rxjava3.interop;
 
 import java.util.*;
 import java.util.concurrent.*;
@@ -97,9 +97,9 @@ public final class FlowableInterop {
      * Returns a CompletionStage that signals the first element of the Flowable
      * or a NoSuchElementException if the Flowable is empty.
      * @param <T> the value type
-     * @return the Function to be used via {@code Flowable.to}.
+     * @return the converter function to be used via {@code Flowable.to}.
      */
-    public static <T> Function<Flowable<T>, CompletionStage<T>> first() {
+    public static <T> FlowableConverter<T, CompletionStage<T>> first() {
         return f -> {
             CompletableFuture<T> cf = new CompletableFuture<>();
             f.firstOrError().subscribe(cf::complete, cf::completeExceptionally);
@@ -112,9 +112,9 @@ public final class FlowableInterop {
      * IllegalArgumentException if the Flowable is longer than 1 element
      * or a NoSuchElementException if the Flowable is empty.
      * @param <T> the value type
-     * @return the Function to be used with {@code Flowable.to}.
+     * @return the converter function to be used with {@code Flowable.to}.
      */
-    public static <T> Function<Flowable<T>, CompletionStage<T>> single() {
+    public static <T> FlowableConverter<T, CompletionStage<T>> single() {
         return f -> {
             CompletableFuture<T> cf = new CompletableFuture<>();
             f.singleOrError().subscribe(cf::complete, cf::completeExceptionally);
@@ -126,9 +126,9 @@ public final class FlowableInterop {
      * Returns a CompletionStage that emits the last element of the Flowable or
      * NoSuchElementException if the Flowable is empty.
      * @param <T> the value type
-     * @return the Function to be used with {@code Flowable.to}.
+     * @return the converter function to be used with {@code Flowable.to}.
      */
-    public static <T> Function<Flowable<T>, CompletionStage<T>> last() {
+    public static <T> FlowableConverter<T, CompletionStage<T>> last() {
         return f -> {
             CompletableFuture<T> cf = new CompletableFuture<>();
             f.lastOrError().subscribe(cf::complete, cf::completeExceptionally);
@@ -141,9 +141,9 @@ public final class FlowableInterop {
      * <p>
      * Closing the Stream will cancel the flow.
      * @param <T> the value type
-     * @return the Function to be used with {@code Flowable.to}.
+     * @return the converter function to be used with {@code Flowable.to}.
      */
-    public static <T> Function<Flowable<T>, Stream<T>> toStream() {
+    public static <T> FlowableConverter<T, Stream<T>> toStream() {
         return f -> ZeroOneIterator.toStream(f.blockingIterable().iterator());
     }
 
@@ -152,7 +152,7 @@ public final class FlowableInterop {
      * @param <T> the value type
      * @return the converter Function to be used with {@code Flowable.to()}.
      */
-    public static <T> Function<Flowable<T>, Optional<T>> firstElement() {
+    public static <T> FlowableConverter<T, Optional<T>> firstElement() {
         return f -> Optional.ofNullable(f.blockingFirst(null));
     }
 
@@ -161,7 +161,7 @@ public final class FlowableInterop {
      * @param <T> the value type
      * @return the converter Function to be used with {@code Flowable.to()}.
      */
-    public static <T> Function<Flowable<T>, Optional<T>> lastElement() {
+    public static <T> FlowableConverter<T, Optional<T>> lastElement() {
         return f -> Optional.ofNullable(f.blockingLast(null));
     }
 

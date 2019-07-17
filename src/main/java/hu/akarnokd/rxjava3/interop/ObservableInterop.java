@@ -14,14 +14,13 @@
  * limitations under the License.
  */
 
-package hu.akarnokd.rxjava2.interop;
+package hu.akarnokd.rxjava3.interop;
 
-import java.util.*;
+import java.util.Optional;
 import java.util.concurrent.*;
 import java.util.stream.*;
 
-import io.reactivex.Observable;
-import io.reactivex.ObservableTransformer;
+import io.reactivex.*;
 import io.reactivex.functions.Function;
 import io.reactivex.internal.functions.ObjectHelper;
 import io.reactivex.plugins.RxJavaPlugins;
@@ -104,9 +103,9 @@ public final class ObservableInterop {
      * Returns a CompletionStage that signals the first element of the Observable
      * or a NoSuchElementException if the Observable is empty.
      * @param <T> the value type
-     * @return the Function to be used via {@code Observable.to}.
+     * @return the converter function to be used via {@code Observable.to}.
      */
-    public static <T> Function<Observable<T>, CompletionStage<T>> first() {
+    public static <T> ObservableConverter<T, CompletionStage<T>> first() {
         return f -> {
             CompletableFuture<T> cf = new CompletableFuture<>();
             f.firstOrError().subscribe(cf::complete, cf::completeExceptionally);
@@ -119,9 +118,9 @@ public final class ObservableInterop {
      * IllegalArgumentException if the Observable is longer than 1 element
      * or a NoSuchElementException if the Observable is empty.
      * @param <T> the value type
-     * @return the Function to be used with {@code Observable.to}.
+     * @return the converter function to be used with {@code Observable.to}.
      */
-    public static <T> Function<Observable<T>, CompletionStage<T>> single() {
+    public static <T> ObservableConverter<T, CompletionStage<T>> single() {
         return f -> {
             CompletableFuture<T> cf = new CompletableFuture<>();
             f.singleOrError().subscribe(cf::complete, cf::completeExceptionally);
@@ -133,9 +132,9 @@ public final class ObservableInterop {
      * Returns a CompletionStage that emits the last element of the Observable or
      * NoSuchElementException if the Observable is empty.
      * @param <T> the value type
-     * @return the Function to be used with {@code Observable.to}.
+     * @return the converter function to be used with {@code Observable.to}.
      */
-    public static <T> Function<Observable<T>, CompletionStage<T>> last() {
+    public static <T> ObservableConverter<T, CompletionStage<T>> last() {
         return f -> {
             CompletableFuture<T> cf = new CompletableFuture<>();
             f.lastOrError().subscribe(cf::complete, cf::completeExceptionally);
@@ -148,9 +147,9 @@ public final class ObservableInterop {
      * <p>
      * Closing the Stream will cancel the flow.
      * @param <T> the value type
-     * @return the Function to be used with {@code Observable.to}.
+     * @return the converter function to be used with {@code Observable.to}.
      */
-    public static <T> Function<Observable<T>, Stream<T>> toStream() {
+    public static <T> ObservableConverter<T, Stream<T>> toStream() {
         return f -> ZeroOneIterator.toStream(f.blockingIterable().iterator());
     }
 
@@ -159,7 +158,7 @@ public final class ObservableInterop {
      * @param <T> the value type
      * @return the converter Function to be used with {@code Observable.to()}.
      */
-    public static <T> Function<Observable<T>, Optional<T>> firstElement() {
+    public static <T> ObservableConverter<T, Optional<T>> firstElement() {
         return o -> Optional.ofNullable(o.blockingFirst(null));
     }
 
@@ -168,7 +167,7 @@ public final class ObservableInterop {
      * @param <T> the value type
      * @return the converter Function to be used with {@code Observable.to()}.
      */
-    public static <T> Function<Observable<T>, Optional<T>> lastElement() {
+    public static <T> ObservableConverter<T, Optional<T>> lastElement() {
         return o -> Optional.ofNullable(o.blockingLast(null));
     }
 

@@ -11,7 +11,7 @@
  * the License for the specific language governing permissions and limitations under the License.
  */
 
-package hu.akarnokd.rxjava2.interop;
+package hu.akarnokd.rxjava3.interop;
 
 import static org.junit.Assert.*;
 
@@ -35,7 +35,6 @@ import io.reactivex.internal.operators.maybe.MaybeToFlowable;
 import io.reactivex.internal.operators.single.SingleToFlowable;
 import io.reactivex.internal.subscriptions.BooleanSubscription;
 import io.reactivex.internal.util.ExceptionHelper;
-import io.reactivex.observers.*;
 import io.reactivex.plugins.RxJavaPlugins;
 import io.reactivex.processors.PublishProcessor;
 import io.reactivex.subjects.Subject;
@@ -92,7 +91,7 @@ public enum TestHelper {
         assertEquals(message, list.get(index).getMessage());
     }
 
-    public static void assertError(TestObserver<?> ts, int index, Class<? extends Throwable> clazz) {
+    public static void assertError(TestObserverEx<?> ts, int index, Class<? extends Throwable> clazz) {
         Throwable ex = ts.errors().get(0);
         if (ex instanceof CompositeException) {
             CompositeException ce = (CompositeException) ex;
@@ -103,7 +102,7 @@ public enum TestHelper {
         }
     }
 
-    public static void assertError(TestSubscriber<?> ts, int index, Class<? extends Throwable> clazz) {
+    public static void assertError(TestSubscriberEx<?> ts, int index, Class<? extends Throwable> clazz) {
         Throwable ex = ts.errors().get(0);
         if (ex instanceof CompositeException) {
             CompositeException ce = (CompositeException) ex;
@@ -114,7 +113,7 @@ public enum TestHelper {
         }
     }
 
-    public static void assertError(TestObserver<?> ts, int index, Class<? extends Throwable> clazz, String message) {
+    public static void assertError(TestObserverEx<?> ts, int index, Class<? extends Throwable> clazz, String message) {
         Throwable ex = ts.errors().get(0);
         if (ex instanceof CompositeException) {
             CompositeException ce = (CompositeException) ex;
@@ -126,7 +125,7 @@ public enum TestHelper {
         }
     }
 
-    public static void assertError(TestSubscriber<?> ts, int index, Class<? extends Throwable> clazz, String message) {
+    public static void assertError(TestSubscriberEx<?> ts, int index, Class<? extends Throwable> clazz, String message) {
         Throwable ex = ts.errors().get(0);
         if (ex instanceof CompositeException) {
             CompositeException ce = (CompositeException) ex;
@@ -333,52 +332,6 @@ public enum TestHelper {
         } catch (Throwable ex) {
             throw ExceptionHelper.wrapOrThrow(ex);
         }
-    }
-
-    /**
-     * Returns an Consumer that asserts the TestSubscriber has exaclty one value + completed
-     * normally and that single value is not the value specified.
-     * @param <T> the value type
-     * @param value the value not expected
-     * @return the consumer
-     */
-    public static <T> Consumer<TestSubscriber<T>> subscriberSingleNot(final T value) {
-        return new Consumer<TestSubscriber<T>>() {
-            @Override
-            public void accept(TestSubscriber<T> ts) throws Exception {
-                ts
-                .assertSubscribed()
-                .assertValueCount(1)
-                .assertNoErrors()
-                .assertComplete();
-
-                T v = ts.values().get(0);
-                assertNotEquals(value, v);
-            }
-        };
-    }
-
-    /**
-     * Returns an Consumer that asserts the TestObserver has exaclty one value + completed
-     * normally and that single value is not the value specified.
-     * @param <T> the value type
-     * @param value the value not expected
-     * @return the consumer
-     */
-    public static <T> Consumer<TestObserver<T>> observerSingleNot(final T value) {
-        return new Consumer<TestObserver<T>>() {
-            @Override
-            public void accept(TestObserver<T> ts) throws Exception {
-                ts
-                .assertSubscribed()
-                .assertValueCount(1)
-                .assertNoErrors()
-                .assertComplete();
-
-                T v = ts.values().get(0);
-                assertNotEquals(value, v);
-            }
-        };
     }
 
     /**
@@ -1487,7 +1440,7 @@ public enum TestHelper {
      * @param classes the array of expected Throwables inside the Composite
      */
     @SafeVarargs
-    public static void assertCompositeExceptions(TestSubscriber<?> ts, Class<? extends Throwable>... classes) {
+    public static void assertCompositeExceptions(TestSubscriberEx<?> ts, Class<? extends Throwable>... classes) {
         ts
         .assertSubscribed()
         .assertError(CompositeException.class)
@@ -1511,7 +1464,7 @@ public enum TestHelper {
      */
     @SafeVarargs
     @SuppressWarnings("unchecked")
-    public static void assertCompositeExceptions(TestSubscriber<?> ts, Object... classes) {
+    public static void assertCompositeExceptions(TestSubscriberEx<?> ts, Object... classes) {
         ts
         .assertSubscribed()
         .assertError(CompositeException.class)
@@ -1533,7 +1486,7 @@ public enum TestHelper {
      * @param classes the array of expected Throwables inside the Composite
      */
     @SafeVarargs
-    public static void assertCompositeExceptions(TestObserver<?> ts, Class<? extends Throwable>... classes) {
+    public static void assertCompositeExceptions(TestObserverEx<?> ts, Class<? extends Throwable>... classes) {
         ts
         .assertSubscribed()
         .assertError(CompositeException.class)
@@ -1557,7 +1510,7 @@ public enum TestHelper {
      */
     @SuppressWarnings("unchecked")
     @SafeVarargs
-    public static void assertCompositeExceptions(TestObserver<?> ts, Object... classes) {
+    public static void assertCompositeExceptions(TestObserverEx<?> ts, Object... classes) {
         ts
         .assertSubscribed()
         .assertError(CompositeException.class)
@@ -1600,51 +1553,16 @@ public enum TestHelper {
         p.onComplete();
     }
 
-    public static <T> TestSubscriber<T> fusedSubscriber(int mode) {
-        TestSubscriber<T> ts = new TestSubscriber<>();
-        try {
-            Field f = BaseTestConsumer.class.getDeclaredField("initialFusionMode");
-            f.setAccessible(true);
-            f.set(ts, mode);
-        } catch (Throwable ex) {
-            throw Exceptions.propagate(ex);
-        }
+    public static <T> TestSubscriberEx<T> fusedSubscriber(int mode) {
+        TestSubscriberEx<T> ts = new TestSubscriberEx<>();
+        ts.setInitialFusionMode(mode);
         return ts;
     }
 
-    public static <T> Consumer<TestSubscriber<T>> assertFusedSubscriber(final int mode) {
-        return new Consumer<TestSubscriber<T>>() {
-            @Override
-            public void accept(TestSubscriber<T> ts) throws Exception {
-                Field f = BaseTestConsumer.class.getDeclaredField("establishedFusionMode");
-                f.setAccessible(true);
-                assertEquals(mode, f.get(ts));
-            }
-        };
-    }
-
-
-    public static <T> TestObserver<T> fusedObserver(int mode) {
-        TestObserver<T> ts = new TestObserver<>();
-        try {
-            Field f = BaseTestConsumer.class.getDeclaredField("initialFusionMode");
-            f.setAccessible(true);
-            f.set(ts, mode);
-        } catch (Throwable ex) {
-            throw Exceptions.propagate(ex);
-        }
+    public static <T> TestObserverEx<T> fusedObserver(int mode) {
+        TestObserverEx<T> ts = new TestObserverEx<>();
+        ts.setInitialFusionMode(mode);
         return ts;
-    }
-
-    public static <T> Consumer<TestObserver<T>> assertFusedObserver(final int mode) {
-        return new Consumer<TestObserver<T>>() {
-            @Override
-            public void accept(TestObserver<T> ts) throws Exception {
-                Field f = BaseTestConsumer.class.getDeclaredField("establishedFusionMode");
-                f.setAccessible(true);
-                assertEquals(mode, f.get(ts));
-            }
-        };
     }
 
     public static <T> void assertFuture(T expected, CompletionStage<T> future) {

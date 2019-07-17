@@ -1,4 +1,4 @@
-package hu.akarnokd.rxjava2.interop;
+package hu.akarnokd.rxjava3.interop;
 
 import java.util.Iterator;
 import java.util.concurrent.atomic.*;

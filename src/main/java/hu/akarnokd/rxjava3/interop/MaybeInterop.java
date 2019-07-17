@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package hu.akarnokd.rxjava2.interop;
+package hu.akarnokd.rxjava3.interop;
 
 import java.util.Optional;
 import java.util.concurrent.*;
@@ -76,9 +76,9 @@ public final class MaybeInterop {
      * of the given Maybe source.
      * <p>An empty Maybe will complete with a null value
      * @param <T> the value type
-     * @return the Function to be used with {@code Maybe.to()}
+     * @return the converter function to be used with {@code Maybe.to()}
      */
-    public static <T> Function<Maybe<T>, CompletionStage<T>> get() {
+    public static <T> MaybeConverter<T, CompletionStage<T>> get() {
         return m -> {
             CompletableFuture<T> cf = new CompletableFuture<>();
             m.subscribe(cf::complete, cf::completeExceptionally, () -> cf.complete(null));
@@ -90,9 +90,9 @@ public final class MaybeInterop {
      * Returns a blocking Stream of a potentially zero or one value (or error) of
      * the Maybe.
      * @param <T> the value type
-     * @return the Function to be used with {@code Maybe.to()}
+     * @return the converter function to be used with {@code Maybe.to()}
      */
-    public static <T> Function<Maybe<T>, Stream<T>> toStream() {
+    public static <T> MaybeConverter<T, Stream<T>> toStream() {
         return m -> {
             ZeroOneIterator<T> zoi = new ZeroOneIterator<>();
             m.subscribe(zoi);
@@ -105,7 +105,7 @@ public final class MaybeInterop {
      * @param <T> the value type
      * @return the converter Function to be used with {@code Maybe.to()}.
      */
-    public static <T> Function<Maybe<T>, Optional<T>> element() {
+    public static <T> MaybeConverter<T, Optional<T>> element() {
         return m -> Optional.ofNullable(m.blockingGet());
     }
 

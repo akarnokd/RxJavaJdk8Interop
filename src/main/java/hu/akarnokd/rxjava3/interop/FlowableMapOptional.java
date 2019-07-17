@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package hu.akarnokd.rxjava2.interop;
+package hu.akarnokd.rxjava3.interop;
 
 import java.util.Optional;
 
@@ -104,7 +104,7 @@ final class FlowableMapOptional<T, R> extends Flowable<R> {
         }
 
         @Override
-        public R poll() throws Exception {
+        public R poll() throws Throwable {
             for (;;) {
                 T t = qs.poll();
 
@@ -174,7 +174,7 @@ final class FlowableMapOptional<T, R> extends Flowable<R> {
         }
 
         @Override
-        public R poll() throws Exception {
+        public R poll() throws Throwable {
             for (;;) {
                 T t = qs.poll();
 

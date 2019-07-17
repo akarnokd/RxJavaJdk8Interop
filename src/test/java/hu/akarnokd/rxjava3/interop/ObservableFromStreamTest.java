@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package hu.akarnokd.rxjava2.interop;
+package hu.akarnokd.rxjava3.interop;
 
 import static org.junit.Assert.assertEquals;
 
@@ -24,7 +24,8 @@ import java.util.stream.IntStream;
 
 import org.junit.Test;
 
-import hu.akarnokd.rxjava2.interop.ObservableFromStream.StreamDisposable;
+import hu.akarnokd.rxjava3.interop.ObservableInterop;
+import hu.akarnokd.rxjava3.interop.ObservableFromStream.StreamDisposable;
 import io.reactivex.Observable;
 import io.reactivex.observers.TestObserver;
 import io.reactivex.plugins.RxJavaPlugins;

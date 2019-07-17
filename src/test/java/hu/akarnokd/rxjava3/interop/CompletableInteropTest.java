@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package hu.akarnokd.rxjava2.interop;
+package hu.akarnokd.rxjava3.interop;
 
 import java.util.List;
 import java.util.concurrent.*;
@@ -22,8 +22,8 @@ import java.util.stream.Collectors;
 
 import org.junit.*;
 
+import hu.akarnokd.rxjava3.interop.CompletableInterop;
 import io.reactivex.Completable;
-import io.reactivex.observers.TestObserver;
 
 public class CompletableInteropTest {
 
@@ -84,9 +84,11 @@ public class CompletableInteropTest {
 
     @Test
     public void fromFutureError() {
-        TestObserver<Void> ts = CompletableInterop.fromFuture(
+        TestObserverEx<Void> ts = new TestObserverEx<>();
+        
+        CompletableInterop.fromFuture(
                 CompletableFuture.supplyAsync(() -> { throw new IllegalArgumentException(); }))
-        .test()
+        .subscribeWith(ts)
         .awaitDone(5, TimeUnit.SECONDS)
         .assertFailure(CompletionException.class);
 

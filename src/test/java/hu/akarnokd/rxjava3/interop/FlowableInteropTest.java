@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package hu.akarnokd.rxjava2.interop;
+package hu.akarnokd.rxjava3.interop;
 
 import java.io.IOException;
 import java.util.*;
@@ -31,7 +31,6 @@ import io.reactivex.internal.fuseable.QueueSubscription;
 import io.reactivex.internal.subscriptions.BooleanSubscription;
 import io.reactivex.plugins.RxJavaPlugins;
 import io.reactivex.processors.UnicastProcessor;
-import io.reactivex.subscribers.TestSubscriber;
 
 public class FlowableInteropTest {
 
@@ -80,9 +79,9 @@ public class FlowableInteropTest {
 
     @Test
     public void fromFutureError() {
-        TestSubscriber<Object> ts = FlowableInterop.fromFuture(
+        TestSubscriberEx<Object> ts = FlowableInterop.fromFuture(
                 CompletableFuture.supplyAsync(() -> { throw new IllegalArgumentException(); }))
-        .test()
+        .subscribeWith(new TestSubscriberEx<>())
         .awaitDone(5, TimeUnit.SECONDS)
         .assertFailure(CompletionException.class);
 
@@ -238,7 +237,7 @@ public class FlowableInteropTest {
 
     @Test
     public void mapOptionalSyncFused() {
-        TestSubscriber<Integer> ts = TestHelper.fusedSubscriber(QueueSubscription.ANY);
+        TestSubscriberEx<Integer> ts = TestHelper.fusedSubscriber(QueueSubscription.ANY);
 
         Flowable.range(1, 5)
         .compose(FlowableInterop.mapOptional(v -> {
@@ -248,13 +247,13 @@ public class FlowableInteropTest {
             return Optional.empty();
         }))
         .subscribeWith(ts)
-        .assertOf(TestHelper.assertFusedSubscriber(QueueSubscription.SYNC))
+        .assertFusionMode(QueueSubscription.SYNC)
         .assertResult(-2, -4);
     }
 
     @Test
     public void mapOptionalAsyncFused() {
-        TestSubscriber<Integer> ts = TestHelper.fusedSubscriber(QueueSubscription.ANY);
+        TestSubscriberEx<Integer> ts = TestHelper.fusedSubscriber(QueueSubscription.ANY);
 
         UnicastProcessor<Integer> up = UnicastProcessor.create();
         TestHelper.emit(up, 1, 2, 3, 4, 5);
@@ -267,7 +266,7 @@ public class FlowableInteropTest {
             return Optional.empty();
         }))
         .subscribeWith(ts)
-        .assertOf(TestHelper.assertFusedSubscriber(QueueSubscription.ASYNC))
+        .assertFusionMode(QueueSubscription.ASYNC)
         .assertResult(-2, -4);
     }
 
@@ -301,7 +300,7 @@ public class FlowableInteropTest {
 
     @Test
     public void mapOptionalSyncFusedConditional() {
-        TestSubscriber<Integer> ts = TestHelper.fusedSubscriber(QueueSubscription.ANY);
+        TestSubscriberEx<Integer> ts = TestHelper.fusedSubscriber(QueueSubscription.ANY);
 
         Flowable.range(1, 5)
         .compose(FlowableInterop.mapOptional(v -> {
@@ -312,13 +311,13 @@ public class FlowableInteropTest {
         }))
         .filter(Functions.alwaysTrue())
         .subscribeWith(ts)
-        .assertOf(TestHelper.assertFusedSubscriber(QueueSubscription.SYNC))
+        .assertFusionMode(QueueSubscription.SYNC)
         .assertResult(-2, -4);
     }
 
     @Test
     public void mapOptionalAsyncFusedConditional() {
-        TestSubscriber<Integer> ts = TestHelper.fusedSubscriber(QueueSubscription.ANY);
+        TestSubscriberEx<Integer> ts = TestHelper.fusedSubscriber(QueueSubscription.ANY);
 
         UnicastProcessor<Integer> up = UnicastProcessor.create();
         TestHelper.emit(up, 1, 2, 3, 4, 5);
@@ -332,7 +331,7 @@ public class FlowableInteropTest {
         }))
         .filter(Functions.alwaysTrue())
         .subscribeWith(ts)
-        .assertOf(TestHelper.assertFusedSubscriber(QueueSubscription.ASYNC))
+        .assertFusionMode(QueueSubscription.ASYNC)
         .assertResult(-2, -4);
     }
 

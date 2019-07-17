@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package hu.akarnokd.rxjava2.interop;
+package hu.akarnokd.rxjava3.interop;
 
 import java.util.*;
 import java.util.concurrent.*;
@@ -25,7 +25,6 @@ import org.junit.*;
 
 import io.reactivex.*;
 import io.reactivex.disposables.*;
-import io.reactivex.observers.TestObserver;
 
 public class MaybeInteropTest {
 
@@ -68,9 +67,9 @@ public class MaybeInteropTest {
 
     @Test
     public void fromFutureError() {
-        TestObserver<Object> ts = MaybeInterop.fromFuture(
+        TestObserverEx<Object> ts = MaybeInterop.fromFuture(
                 CompletableFuture.supplyAsync(() -> { throw new IllegalArgumentException(); }))
-        .test()
+        .subscribeWith(new TestObserverEx<>())
         .awaitDone(5, TimeUnit.SECONDS)
         .assertFailure(CompletionException.class);
 

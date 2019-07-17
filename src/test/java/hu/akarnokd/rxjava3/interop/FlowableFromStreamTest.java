@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package hu.akarnokd.rxjava2.interop;
+package hu.akarnokd.rxjava3.interop;
 
 import static org.junit.Assert.assertEquals;
 
@@ -24,7 +24,7 @@ import java.util.stream.IntStream;
 
 import org.junit.Test;
 
-import hu.akarnokd.rxjava2.interop.FlowableFromStream.StreamSubscription;
+import hu.akarnokd.rxjava3.interop.FlowableFromStream.StreamSubscription;
 import io.reactivex.Flowable;
 import io.reactivex.plugins.RxJavaPlugins;
 import io.reactivex.schedulers.Schedulers;
@@ -121,7 +121,7 @@ public class FlowableFromStreamTest {
 
                     @Override
                     public boolean hasNext() {
-                        ts.dispose();
+                        ts.cancel();
                         return true;
                     }
 
@@ -188,7 +188,7 @@ public class FlowableFromStreamTest {
                     @Override
                     public Integer next() {
                         calls.getAndIncrement();
-                        ts.dispose();
+                        ts.cancel();
                         return 1;
                     }
                 }

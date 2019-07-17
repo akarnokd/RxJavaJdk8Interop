@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package hu.akarnokd.rxjava2.interop;
+package hu.akarnokd.rxjava3.interop;
 
 import java.io.IOException;
 import java.util.*;
@@ -24,12 +24,12 @@ import java.util.stream.*;
 
 import org.junit.*;
 
+import hu.akarnokd.rxjava3.interop.ObservableInterop;
 import io.reactivex.Observable;
 import io.reactivex.Observer;
 import io.reactivex.disposables.Disposables;
 import io.reactivex.internal.functions.Functions;
 import io.reactivex.internal.fuseable.QueueSubscription;
-import io.reactivex.observers.TestObserver;
 import io.reactivex.plugins.RxJavaPlugins;
 import io.reactivex.subjects.UnicastSubject;
 
@@ -80,8 +80,10 @@ public class ObservableInteropTest {
 
     @Test
     public void fromFutureError() {
-        TestObserver<Object> ts = ObservableInterop.fromFuture(CompletableFuture.supplyAsync(() -> { throw new IllegalArgumentException(); }))
-        .test()
+        TestObserverEx<Object> ts = new TestObserverEx<>();
+        
+        ObservableInterop.fromFuture(CompletableFuture.supplyAsync(() -> { throw new IllegalArgumentException(); }))
+        .subscribeWith(ts)
         .awaitDone(5, TimeUnit.SECONDS)
         .assertFailure(CompletionException.class);
 
@@ -237,7 +239,7 @@ public class ObservableInteropTest {
 
     @Test
     public void mapOptionalSyncFused() {
-        TestObserver<Integer> ts = TestHelper.fusedObserver(QueueSubscription.ANY);
+        TestObserverEx<Integer> ts = TestHelper.fusedObserver(QueueSubscription.ANY);
 
         Observable.range(1, 5)
         .compose(ObservableInterop.mapOptional(v -> {
@@ -247,13 +249,13 @@ public class ObservableInteropTest {
             return Optional.empty();
         }))
         .subscribeWith(ts)
-        .assertOf(TestHelper.assertFusedObserver(QueueSubscription.SYNC))
+        .assertFusionMode(QueueSubscription.SYNC)
         .assertResult(-2, -4);
     }
 
     @Test
     public void mapOptionalAsyncFused() {
-        TestObserver<Integer> ts = TestHelper.fusedObserver(QueueSubscription.ANY);
+        TestObserverEx<Integer> ts = TestHelper.fusedObserver(QueueSubscription.ANY);
 
         UnicastSubject<Integer> up = UnicastSubject.create();
         TestHelper.emit(up, 1, 2, 3, 4, 5);
@@ -266,7 +268,7 @@ public class ObservableInteropTest {
             return Optional.empty();
         }))
         .subscribeWith(ts)
-        .assertOf(TestHelper.assertFusedObserver(QueueSubscription.ASYNC))
+        .assertFusionMode(QueueSubscription.ASYNC)
         .assertResult(-2, -4);
     }
 
@@ -300,7 +302,7 @@ public class ObservableInteropTest {
 
     @Test
     public void mapOptionalSyncFusedConditional() {
-        TestObserver<Integer> ts = TestHelper.fusedObserver(QueueSubscription.ANY);
+        TestObserverEx<Integer> ts = TestHelper.fusedObserver(QueueSubscription.ANY);
 
         Observable.range(1, 5)
         .compose(ObservableInterop.mapOptional(v -> {
@@ -311,13 +313,13 @@ public class ObservableInteropTest {
         }))
         .filter(Functions.alwaysTrue())
         .subscribeWith(ts)
-        .assertOf(TestHelper.assertFusedObserver(QueueSubscription.SYNC))
+        .assertFusionMode(QueueSubscription.SYNC)
         .assertResult(-2, -4);
     }
 
     @Test
     public void mapOptionalAsyncFusedConditional() {
-        TestObserver<Integer> ts = TestHelper.fusedObserver(QueueSubscription.ANY);
+        TestObserverEx<Integer> ts = TestHelper.fusedObserver(QueueSubscription.ANY);
 
         UnicastSubject<Integer> up = UnicastSubject.create();
         TestHelper.emit(up, 1, 2, 3, 4, 5);
@@ -331,7 +333,7 @@ public class ObservableInteropTest {
         }))
         .filter(Functions.alwaysTrue())
         .subscribeWith(ts)
-        .assertOf(TestHelper.assertFusedObserver(QueueSubscription.ASYNC))
+        .assertFusionMode(QueueSubscription.ASYNC)
         .assertResult(-2, -4);
     }
 

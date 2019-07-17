@@ -3,7 +3,7 @@
 
 <a href='https://travis-ci.org/akarnokd/RxJavaJdk8Interop/builds'><img src='https://travis-ci.org/akarnokd/RxJavaJdk8Interop.svg?branch=master'></a>
 [![codecov.io](http://codecov.io/github/akarnokd/RxJavaJdk8Interop/coverage.svg?branch=master)](http://codecov.io/github/akarnokd/RxJavaJdk8Interop?branch=master)
-[![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.github.akarnokd/rxjava2-jdk8-interop/badge.svg)](https://maven-badges.herokuapp.com/maven-central/com.github.akarnokd/rxjava2-jdk8-interop)
+[![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.github.akarnokd/rxjava3-jdk8-interop/badge.svg)](https://maven-badges.herokuapp.com/maven-central/com.github.akarnokd/rxjava3-jdk8-interop)
 
 RxJava 2.x: [![RxJava 2.x](https://maven-badges.herokuapp.com/maven-central/io.reactivex.rxjava2/rxjava/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.reactivex.rxjava2/rxjava)
 
@@ -12,7 +12,7 @@ RxJava 2 interop library for supporting Java 8 features such as Optional, Stream
 # Release
 
 ```groovy
-compile 'com.github.akarnokd:rxjava2-jdk8-interop:0.3.7'
+compile 'com.github.akarnokd:rxjava3-jdk8-interop:3.0.0-RC1'
 ```
 
 # Examples

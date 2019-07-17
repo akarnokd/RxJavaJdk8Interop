@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package hu.akarnokd.rxjava2.interop;
+package hu.akarnokd.rxjava3.interop;
 
 import java.util.*;
 import java.util.concurrent.*;
@@ -22,8 +22,8 @@ import java.util.stream.Collectors;
 
 import org.junit.*;
 
+import hu.akarnokd.rxjava3.interop.SingleInterop;
 import io.reactivex.Single;
-import io.reactivex.observers.TestObserver;
 
 public class SingleInteropTest {
 
@@ -56,9 +56,11 @@ public class SingleInteropTest {
 
     @Test
     public void fromFutureError() {
-        TestObserver<Object> ts = SingleInterop.fromFuture(
+        TestObserverEx<Object> ts = new TestObserverEx<>();
+        
+        SingleInterop.fromFuture(
                 CompletableFuture.supplyAsync(() -> { throw new IllegalArgumentException(); }))
-        .test()
+        .subscribeWith(ts)
         .awaitDone(5, TimeUnit.SECONDS)
         .assertFailure(CompletionException.class);
 
