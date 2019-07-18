@@ -48,7 +48,7 @@ apply plugin: 'osgi'
 dependencies {
     signature 'org.codehaus.mojo.signature:java18:1.0@signature'
 
-    compile "io.reactivex.rxjava3:rxjava:3.0.0-RC1"
+    compile "io.reactivex.rxjava3:rxjava:3.0.0-SNAPSHOT"
 
     testCompile group: 'junit', name: 'junit', version: '4.12'
 }
