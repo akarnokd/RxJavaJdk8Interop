@@ -14,16 +14,16 @@
  * limitations under the License.
  */
 
-package hu.akarnokd.rxjava3.interop;
+package hu.akarnokd.rxjava3.jdk8interop;
 
 import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.stream.*;
 
-import io.reactivex.*;
-import io.reactivex.disposables.Disposable;
-import io.reactivex.internal.disposables.DisposableHelper;
-import io.reactivex.internal.util.ExceptionHelper;
+import io.reactivex.rxjava3.core.*;
+import io.reactivex.rxjava3.disposables.Disposable;
+import io.reactivex.rxjava3.internal.disposables.DisposableHelper;
+import io.reactivex.rxjava3.internal.util.ExceptionHelper;
 
 /**
  * Iterator that emits 0 or 1 values from a reactive source of Single, Maybe or Completable.

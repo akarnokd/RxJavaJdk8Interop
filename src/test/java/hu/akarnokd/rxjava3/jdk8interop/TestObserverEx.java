@@ -1,11 +1,11 @@
-package hu.akarnokd.rxjava3.interop;
+package hu.akarnokd.rxjava3.jdk8interop;
 
 import java.util.concurrent.atomic.AtomicReference;
 
-import io.reactivex.*;
-import io.reactivex.disposables.Disposable;
-import io.reactivex.internal.disposables.DisposableHelper;
-import io.reactivex.internal.fuseable.*;
+import io.reactivex.rxjava3.core.*;
+import io.reactivex.rxjava3.disposables.Disposable;
+import io.reactivex.rxjava3.internal.disposables.DisposableHelper;
+import io.reactivex.rxjava3.internal.fuseable.*;
 
 /**
  * An  extended test Observer that records events and allows making assertions about them.

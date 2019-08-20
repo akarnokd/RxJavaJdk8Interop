@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package hu.akarnokd.rxjava3.interop;
+package hu.akarnokd.rxjava3.jdk8interop;
 
 import static org.junit.Assert.assertEquals;
 
@@ -24,11 +24,11 @@ import java.util.stream.IntStream;
 
 import org.junit.Test;
 
-import hu.akarnokd.rxjava3.interop.ObservableInterop;
-import hu.akarnokd.rxjava3.interop.ObservableFromStream.StreamDisposable;
-import io.reactivex.Observable;
-import io.reactivex.observers.TestObserver;
-import io.reactivex.plugins.RxJavaPlugins;
+import hu.akarnokd.rxjava3.jdk8interop.ObservableInterop;
+import hu.akarnokd.rxjava3.jdk8interop.ObservableFromStream.StreamDisposable;
+import io.reactivex.rxjava3.core.Observable;
+import io.reactivex.rxjava3.observers.TestObserver;
+import io.reactivex.rxjava3.plugins.RxJavaPlugins;
 
 public class ObservableFromStreamTest {
 

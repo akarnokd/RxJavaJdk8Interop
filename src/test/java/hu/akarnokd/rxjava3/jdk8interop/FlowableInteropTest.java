@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package hu.akarnokd.rxjava3.interop;
+package hu.akarnokd.rxjava3.jdk8interop;
 
 import java.io.IOException;
 import java.util.*;
@@ -25,12 +25,13 @@ import java.util.stream.*;
 import org.junit.*;
 import org.reactivestreams.Subscriber;
 
-import io.reactivex.Flowable;
-import io.reactivex.internal.functions.Functions;
-import io.reactivex.internal.fuseable.QueueSubscription;
-import io.reactivex.internal.subscriptions.BooleanSubscription;
-import io.reactivex.plugins.RxJavaPlugins;
-import io.reactivex.processors.UnicastProcessor;
+import hu.akarnokd.rxjava3.jdk8interop.FlowableInterop;
+import io.reactivex.rxjava3.core.Flowable;
+import io.reactivex.rxjava3.internal.functions.Functions;
+import io.reactivex.rxjava3.internal.fuseable.QueueSubscription;
+import io.reactivex.rxjava3.internal.subscriptions.BooleanSubscription;
+import io.reactivex.rxjava3.plugins.RxJavaPlugins;
+import io.reactivex.rxjava3.processors.UnicastProcessor;
 
 public class FlowableInteropTest {
 

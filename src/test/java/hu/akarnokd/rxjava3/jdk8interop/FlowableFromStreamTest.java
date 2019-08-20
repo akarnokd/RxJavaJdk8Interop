@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package hu.akarnokd.rxjava3.interop;
+package hu.akarnokd.rxjava3.jdk8interop;
 
 import static org.junit.Assert.assertEquals;
 
@@ -24,11 +24,12 @@ import java.util.stream.IntStream;
 
 import org.junit.Test;
 
-import hu.akarnokd.rxjava3.interop.FlowableFromStream.StreamSubscription;
-import io.reactivex.Flowable;
-import io.reactivex.plugins.RxJavaPlugins;
-import io.reactivex.schedulers.Schedulers;
-import io.reactivex.subscribers.TestSubscriber;
+import hu.akarnokd.rxjava3.jdk8interop.FlowableInterop;
+import hu.akarnokd.rxjava3.jdk8interop.FlowableFromStream.StreamSubscription;
+import io.reactivex.rxjava3.core.Flowable;
+import io.reactivex.rxjava3.plugins.RxJavaPlugins;
+import io.reactivex.rxjava3.schedulers.Schedulers;
+import io.reactivex.rxjava3.subscribers.TestSubscriber;
 
 public class FlowableFromStreamTest {
 

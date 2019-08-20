@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package hu.akarnokd.rxjava3.interop;
+package hu.akarnokd.rxjava3.jdk8interop;
 
 import java.io.IOException;
 import java.util.*;
@@ -24,14 +24,14 @@ import java.util.stream.*;
 
 import org.junit.*;
 
-import hu.akarnokd.rxjava3.interop.ObservableInterop;
-import io.reactivex.Observable;
-import io.reactivex.Observer;
-import io.reactivex.disposables.Disposables;
-import io.reactivex.internal.functions.Functions;
-import io.reactivex.internal.fuseable.QueueSubscription;
-import io.reactivex.plugins.RxJavaPlugins;
-import io.reactivex.subjects.UnicastSubject;
+import hu.akarnokd.rxjava3.jdk8interop.ObservableInterop;
+import io.reactivex.rxjava3.core.Observable;
+import io.reactivex.rxjava3.core.Observer;
+import io.reactivex.rxjava3.disposables.Disposables;
+import io.reactivex.rxjava3.internal.functions.Functions;
+import io.reactivex.rxjava3.internal.fuseable.QueueSubscription;
+import io.reactivex.rxjava3.plugins.RxJavaPlugins;
+import io.reactivex.rxjava3.subjects.UnicastSubject;
 
 public class ObservableInteropTest {
 

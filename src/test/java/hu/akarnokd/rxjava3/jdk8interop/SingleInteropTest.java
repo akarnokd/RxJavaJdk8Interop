@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package hu.akarnokd.rxjava3.interop;
+package hu.akarnokd.rxjava3.jdk8interop;
 
 import java.util.*;
 import java.util.concurrent.*;
@@ -22,8 +22,8 @@ import java.util.stream.Collectors;
 
 import org.junit.*;
 
-import hu.akarnokd.rxjava3.interop.SingleInterop;
-import io.reactivex.Single;
+import hu.akarnokd.rxjava3.jdk8interop.SingleInterop;
+import io.reactivex.rxjava3.core.Single;
 
 public class SingleInteropTest {
 

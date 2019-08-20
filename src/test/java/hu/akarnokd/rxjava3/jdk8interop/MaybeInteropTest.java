@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package hu.akarnokd.rxjava3.interop;
+package hu.akarnokd.rxjava3.jdk8interop;
 
 import java.util.*;
 import java.util.concurrent.*;
@@ -23,8 +23,8 @@ import java.util.stream.*;
 
 import org.junit.*;
 
-import io.reactivex.*;
-import io.reactivex.disposables.*;
+import io.reactivex.rxjava3.core.*;
+import io.reactivex.rxjava3.disposables.*;
 
 public class MaybeInteropTest {
 

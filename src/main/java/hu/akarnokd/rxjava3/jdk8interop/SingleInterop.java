@@ -14,13 +14,14 @@
  * limitations under the License.
  */
 
-package hu.akarnokd.rxjava3.interop;
+package hu.akarnokd.rxjava3.jdk8interop;
 
+import java.util.NoSuchElementException;
 import java.util.concurrent.*;
 import java.util.stream.Stream;
 
-import io.reactivex.*;
-import io.reactivex.subjects.CompletableSubject;
+import io.reactivex.rxjava3.core.*;
+import io.reactivex.rxjava3.subjects.SingleSubject;
 
 /**
  * Utility methods, sources and operators supporting RxJava 2 and the Jdk 8 API
@@ -28,55 +29,62 @@ import io.reactivex.subjects.CompletableSubject;
  * 
  * @since 0.1.0
  */
-public final class CompletableInterop {
+public final class SingleInterop {
 
     /** Utility class. */
-    private CompletableInterop() {
+    private SingleInterop() {
         throw new IllegalStateException("No instances!");
     }
 
     /**
-     * Returns a CompletionStage that signals a null value or error if the Completable terminates.
-     * @param <T> the target value type (unused)
-     * @return the converter function to be used with {@code Completable.to()}
+     * Returns a CompletionStage that signals the success value or error of the
+     * source Single.
+     * @param <T> the value type
+     * @return the converter function to be used with {@code Single.to()}
      */
-    public static <T> CompletableConverter<CompletionStage<T>> await() {
+    public static <T> SingleConverter<T, CompletionStage<T>> get() {
         return c -> {
             CompletableFuture<T> cf = new CompletableFuture<>();
-            c.subscribe(() -> cf.complete(null), cf::completeExceptionally);
+            c.subscribe(cf::complete, cf::completeExceptionally);
             return cf;
         };
     }
 
     /**
-     * Returns a blocking Stream that waits for the Completable's terminal event.
+     * Returns a blocking Stream of the single success value of the source Single.
      * @param <T> the value type
-     * @return the converter function to be used with {@code Completable.to()}
+     * @return the converter function to be used with {@code Single.to()}
      */
-    public static <T> CompletableConverter<Stream<T>> toStream() {
-        return c -> {
+    public static <T> SingleConverter<T, Stream<T>> toStream() {
+        return s -> {
             ZeroOneIterator<T> zoi = new ZeroOneIterator<>();
-            c.subscribe(zoi);
+            s.subscribe(zoi);
             return ZeroOneIterator.toStream(zoi);
         };
     }
 
     /**
-     * Returns a Completable that terminates when the given CompletionStage terminates.
+     * Returns a Single that emits the value of the CompletionStage, its error or
+     * NoSuchElementException if it signals null.
+     * @param <T> the value type
      * @param future the source CompletionStage instance
      * @return the new Completable instance
      */
-    public static Completable fromFuture(CompletionStage<?> future) {
-        CompletableSubject cs = CompletableSubject.create();
+    public static <T> Single<T> fromFuture(CompletionStage<T> future) {
+        SingleSubject<T> cs = SingleSubject.create();
 
         future.whenComplete((v, e) -> {
             if (e != null) {
                 cs.onError(e);
+            } else
+            if (v != null) {
+                cs.onSuccess(v);
             } else {
-                cs.onComplete();
+                cs.onError(new NoSuchElementException());
             }
         });
 
         return cs;
     }
+
 }

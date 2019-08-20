@@ -12,7 +12,7 @@ RxJava 3 interop library for supporting Java 8 features such as Optional, Stream
 # Release
 
 ```groovy
-compile 'com.github.akarnokd:rxjava3-jdk8-interop:3.0.0-RC1'
+compile 'com.github.akarnokd:rxjava3-jdk8-interop:3.0.0-RC2'
 ```
 
 # Examples

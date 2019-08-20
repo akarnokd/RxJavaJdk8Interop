@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package hu.akarnokd.rxjava3.interop;
+package hu.akarnokd.rxjava3.jdk8interop;
 
 import java.util.List;
 import java.util.concurrent.*;
@@ -22,8 +22,8 @@ import java.util.stream.Collectors;
 
 import org.junit.*;
 
-import hu.akarnokd.rxjava3.interop.CompletableInterop;
-import io.reactivex.Completable;
+import hu.akarnokd.rxjava3.jdk8interop.CompletableInterop;
+import io.reactivex.rxjava3.core.Completable;
 
 public class CompletableInteropTest {
 

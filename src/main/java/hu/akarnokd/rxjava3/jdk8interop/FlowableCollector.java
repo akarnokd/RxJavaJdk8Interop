@@ -14,17 +14,17 @@
  * limitations under the License.
  */
 
-package hu.akarnokd.rxjava3.interop;
+package hu.akarnokd.rxjava3.jdk8interop;
 
 import java.util.function.*;
 import java.util.stream.Collector;
 
-import io.reactivex.*;
-import io.reactivex.disposables.Disposable;
-import io.reactivex.exceptions.Exceptions;
-import io.reactivex.internal.disposables.*;
-import io.reactivex.internal.observers.DeferredScalarDisposable;
-import io.reactivex.plugins.RxJavaPlugins;
+import org.reactivestreams.*;
+
+import io.reactivex.rxjava3.core.*;
+import io.reactivex.rxjava3.exceptions.Exceptions;
+import io.reactivex.rxjava3.internal.subscriptions.*;
+import io.reactivex.rxjava3.plugins.RxJavaPlugins;
 
 /**
  * Collect elements of the upstream with the help of the Collector's callback functions.
@@ -33,19 +33,19 @@ import io.reactivex.plugins.RxJavaPlugins;
  * @param <A> the accumulated type
  * @param <R> the result type
  */
-final class ObservableCollector<T, A, R> extends Observable<R> {
+final class FlowableCollector<T, A, R> extends Flowable<R> {
 
-    final ObservableSource<T> source;
+    final Publisher<T> source;
 
     final Collector<T, A, R> collector;
 
-    ObservableCollector(ObservableSource<T> source, Collector<T, A, R> collector) {
+    FlowableCollector(Publisher<T> source, Collector<T, A, R> collector) {
         this.source = source;
         this.collector = collector;
     }
 
     @Override
-    protected void subscribeActual(Observer<? super R> s) {
+    protected void subscribeActual(Subscriber<? super R> s) {
         A initialValue;
         BiConsumer<A, T> accumulator;
         Function<A, R> finisher;
@@ -58,15 +58,15 @@ final class ObservableCollector<T, A, R> extends Observable<R> {
             finisher = collector.finisher();
         } catch (Throwable ex) {
             Exceptions.throwIfFatal(ex);
-            EmptyDisposable.error(ex, s);
+            EmptySubscription.error(ex, s);
             return;
         }
 
-        source.subscribe(new CollectorObserver<>(s, initialValue, accumulator, finisher));
+        source.subscribe(new CollectorSubscriber<>(s, initialValue, accumulator, finisher));
     }
 
-    static final class CollectorObserver<T, A, R> extends DeferredScalarDisposable<R>
-    implements Observer<T> {
+    static final class CollectorSubscriber<T, A, R> extends DeferredScalarSubscription<R>
+    implements FlowableSubscriber<T> {
 
         private static final long serialVersionUID = 2129956429647866524L;
 
@@ -76,11 +76,11 @@ final class ObservableCollector<T, A, R> extends Observable<R> {
 
         A intermediate;
 
-        Disposable upstream;
+        Subscription upstream;
 
         boolean done;
 
-        public CollectorObserver(Observer<? super R> actual,
+        public CollectorSubscriber(Subscriber<? super R> actual,
                 A initialValue, BiConsumer<A, T> accumulator, Function<A, R> finisher) {
             super(actual);
             this.intermediate = initialValue;
@@ -89,11 +89,13 @@ final class ObservableCollector<T, A, R> extends Observable<R> {
         }
 
         @Override
-        public void onSubscribe(Disposable d) {
-            if (DisposableHelper.validate(this.upstream, d)) {
-                this.upstream = d;
+        public void onSubscribe(Subscription s) {
+            if (SubscriptionHelper.validate(this.upstream, s)) {
+                this.upstream = s;
 
                 downstream.onSubscribe(this);
+
+                s.request(Long.MAX_VALUE);
             }
         }
 
@@ -104,7 +106,7 @@ final class ObservableCollector<T, A, R> extends Observable<R> {
                     accumulator.accept(intermediate, t);
                 } catch (Throwable ex) {
                     Exceptions.throwIfFatal(ex);
-                    upstream.dispose();
+                    upstream.cancel();
                     onError(ex);
                 }
             }
@@ -140,9 +142,9 @@ final class ObservableCollector<T, A, R> extends Observable<R> {
         }
 
         @Override
-        public void dispose() {
-            super.dispose();
-            upstream.dispose();
+        public void cancel() {
+            super.cancel();
+            upstream.cancel();
         }
     }
 }

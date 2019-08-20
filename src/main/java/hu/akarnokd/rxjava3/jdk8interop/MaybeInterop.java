@@ -14,16 +14,16 @@
  * limitations under the License.
  */
 
-package hu.akarnokd.rxjava3.interop;
+package hu.akarnokd.rxjava3.jdk8interop;
 
 import java.util.Optional;
 import java.util.concurrent.*;
 import java.util.stream.Stream;
 
-import io.reactivex.*;
-import io.reactivex.functions.Function;
-import io.reactivex.plugins.RxJavaPlugins;
-import io.reactivex.subjects.MaybeSubject;
+import io.reactivex.rxjava3.core.*;
+import io.reactivex.rxjava3.functions.Function;
+import io.reactivex.rxjava3.plugins.RxJavaPlugins;
+import io.reactivex.rxjava3.subjects.MaybeSubject;
 
 /**
  * Utility methods, sources and operators supporting RxJava 2 and the Jdk 8 API
