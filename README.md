@@ -17,6 +17,8 @@ compile 'com.github.akarnokd:rxjava3-jdk8-interop:3.0.0-RC2'
 
 # Examples
 
+Javadocs: [https://akarnokd.github.com/RxJavaJdk8Interop/javadoc/index.html](https://akarnokd.github.com/RxJavaJdk8Interop/javadoc/index.html)
+
 The main entry points are:
 
   - `FlowableInterop`
