@@ -46,7 +46,7 @@ public final class MaybeInterop {
      * @return the new Maybe instance
      */
     public static <T> Maybe<T> fromOptional(Optional<T> opt) {
-        return opt.map(Maybe::just).orElse(Maybe.empty());
+        return opt.map(Maybe::just).orElseGet(Maybe::empty);
     }
 
     /**

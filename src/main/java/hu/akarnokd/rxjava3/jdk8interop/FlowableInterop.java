@@ -56,7 +56,7 @@ public final class FlowableInterop {
      * @return the new Flowable instance
      */
     public static <T> Flowable<T> fromOptional(Optional<T> opt) {
-        return opt.map(Flowable::just).orElse(Flowable.empty());
+        return opt.map(Flowable::just).orElseGet(Flowable::empty);
     }
 
     /**

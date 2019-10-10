@@ -62,7 +62,7 @@ public final class ObservableInterop {
      * @return the new Observable instance
      */
     public static <T> Observable<T> fromOptional(Optional<T> opt) {
-        return opt.map(Observable::just).orElse(Observable.empty());
+        return opt.map(Observable::just).orElseGet(Observable::empty);
     }
 
     /**
