@@ -86,7 +86,7 @@ public class FlowableFromStreamTest {
 
         AtomicInteger calls = new AtomicInteger();
 
-        StreamSubscription<Integer> sd = new StreamSubscription<Integer>(ts,
+        StreamSubscription<Integer> sd = new StreamSubscription<>(ts,
                 () -> { },
                 new Iterator<Integer>() {
 
@@ -116,7 +116,7 @@ public class FlowableFromStreamTest {
 
         AtomicInteger calls = new AtomicInteger();
 
-        StreamSubscription<Integer> sd = new StreamSubscription<Integer>(ts,
+        StreamSubscription<Integer> sd = new StreamSubscription<>(ts,
                 () -> { },
                 new Iterator<Integer>() {
 
@@ -147,7 +147,7 @@ public class FlowableFromStreamTest {
 
         AtomicInteger calls = new AtomicInteger();
 
-        StreamSubscription<Integer> sd = new StreamSubscription<Integer>(ts,
+        StreamSubscription<Integer> sd = new StreamSubscription<>(ts,
                 () -> { },
                 new Iterator<Integer>() {
 
@@ -177,7 +177,7 @@ public class FlowableFromStreamTest {
 
         AtomicInteger calls = new AtomicInteger();
 
-        StreamSubscription<Integer> sd = new StreamSubscription<Integer>(ts,
+        StreamSubscription<Integer> sd = new StreamSubscription<>(ts,
                 () -> { },
                 new Iterator<Integer>() {
 
@@ -209,7 +209,7 @@ public class FlowableFromStreamTest {
         try {
             TestSubscriber<Integer> ts = new TestSubscriber<>();
 
-            StreamSubscription<Integer> sd = new StreamSubscription<Integer>(ts,
+            StreamSubscription<Integer> sd = new StreamSubscription<>(ts,
                     () -> { throw new IllegalArgumentException(); },
                     Collections.singleton(1).iterator());
 
@@ -295,7 +295,7 @@ public class FlowableFromStreamTest {
 
         AtomicInteger calls = new AtomicInteger();
 
-        StreamSubscription<Integer> sd = new StreamSubscription<Integer>(ts,
+        StreamSubscription<Integer> sd = new StreamSubscription<>(ts,
                 () -> { },
                 new Iterator<Integer>() {
 

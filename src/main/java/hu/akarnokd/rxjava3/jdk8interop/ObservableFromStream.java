@@ -50,7 +50,7 @@ final class ObservableFromStream<T> extends Observable<T> {
             EmptyDisposable.error(ex, observer);
             return;
         }
-        StreamDisposable<T> d = new StreamDisposable<T>(observer, stream, iterator);
+        StreamDisposable<T> d = new StreamDisposable<>(observer, stream, iterator);
         observer.onSubscribe(d);
         d.run();
     }

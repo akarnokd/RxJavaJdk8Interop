@@ -46,7 +46,7 @@ public final class FlowableInterop {
      * @return the new Flowable instance
      */
     public static <T> Flowable<T> fromStream(Stream<T> stream) {
-        return RxJavaPlugins.onAssembly(new FlowableFromStream<T>(stream));
+        return RxJavaPlugins.onAssembly(new FlowableFromStream<>(stream));
     }
 
     /**

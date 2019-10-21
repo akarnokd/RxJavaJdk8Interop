@@ -78,7 +78,7 @@ public class ObservableFromStreamTest {
 
         AtomicInteger calls = new AtomicInteger();
 
-        StreamDisposable<Integer> sd = new StreamDisposable<Integer>(to,
+        StreamDisposable<Integer> sd = new StreamDisposable<>(to,
                 () -> { },
                 new Iterator<Integer>() {
 
@@ -110,7 +110,7 @@ public class ObservableFromStreamTest {
 
         AtomicInteger calls = new AtomicInteger();
 
-        StreamDisposable<Integer> sd = new StreamDisposable<Integer>(to,
+        StreamDisposable<Integer> sd = new StreamDisposable<>(to,
                 () -> { },
                 new Iterator<Integer>() {
 
@@ -143,7 +143,7 @@ public class ObservableFromStreamTest {
 
         AtomicInteger calls = new AtomicInteger();
 
-        StreamDisposable<Integer> sd = new StreamDisposable<Integer>(to,
+        StreamDisposable<Integer> sd = new StreamDisposable<>(to,
                 () -> { },
                 new Iterator<Integer>() {
 
@@ -175,7 +175,7 @@ public class ObservableFromStreamTest {
 
         AtomicInteger calls = new AtomicInteger();
 
-        StreamDisposable<Integer> sd = new StreamDisposable<Integer>(to,
+        StreamDisposable<Integer> sd = new StreamDisposable<>(to,
                 () -> { },
                 new Iterator<Integer>() {
 
@@ -209,7 +209,7 @@ public class ObservableFromStreamTest {
         try {
             TestObserver<Integer> to = new TestObserver<>();
 
-            StreamDisposable<Integer> sd = new StreamDisposable<Integer>(to,
+            StreamDisposable<Integer> sd = new StreamDisposable<>(to,
                     () -> { throw new IllegalArgumentException(); },
                     Collections.emptyIterator());
 

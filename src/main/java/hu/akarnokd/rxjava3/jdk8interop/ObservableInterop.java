@@ -52,7 +52,7 @@ public final class ObservableInterop {
      */
     public static <T> Observable<T> fromStream(Stream<T> stream) {
         ObjectHelper.requireNonNull(stream, "stream is null");
-        return RxJavaPlugins.onAssembly(new ObservableFromStream<T>(stream));
+        return RxJavaPlugins.onAssembly(new ObservableFromStream<>(stream));
     }
 
     /**

@@ -61,7 +61,7 @@ final class FlowableFromStream<T> extends Flowable<T> {
             EmptySubscription.complete(s);
             return;
         }
-        s.onSubscribe(new StreamSubscription<T>(s, stream, iterator));
+        s.onSubscribe(new StreamSubscription<>(s, stream, iterator));
     }
 
     static final class StreamSubscription<T> extends AtomicInteger implements Subscription {
