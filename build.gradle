@@ -11,7 +11,7 @@ buildscript {
     ext.bndVersion = "4.3.0"
     ext.junitVersion = "4.12"
     ext.jmhLibVersion = "1.21"
-    ext.jmhGradleVersion = "0.5.0-rc-2"
+    ext.jmhGradleVersion = "0.5.0"
     ext.jacocoVersion = "0.8.4"
     ext.pmdVersion = "5.4.2"
     ext.mavenPublishVersion = "0.8.0"
