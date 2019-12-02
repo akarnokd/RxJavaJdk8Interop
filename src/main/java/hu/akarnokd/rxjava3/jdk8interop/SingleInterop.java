@@ -68,7 +68,7 @@ public final class SingleInterop {
      * NoSuchElementException if it signals null.
      * @param <T> the value type
      * @param future the source CompletionStage instance
-     * @return the new Completable instance
+     * @return the new Single instance
      */
     public static <T> Single<T> fromFuture(CompletionStage<T> future) {
         SingleSubject<T> cs = SingleSubject.create();
