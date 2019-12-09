@@ -4,7 +4,7 @@ buildscript {
     // Versions
     // ------------------------------------------------------------------
     
-    ext.rxjava3Version = "3.0.0-RC5"
+    ext.rxjava3Version = "3.0.0-RC6"
     ext.rxjava3DocVersion = "3.x"
     ext.licenseVersion = "0.15.0"
     ext.animalSnifferVersion = "1.5.0"
