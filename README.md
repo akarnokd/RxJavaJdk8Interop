@@ -1,5 +1,10 @@
 # RxJavaJdk8Interop
 
+## :warning: Discontinued
+
+The features of this library (and more) have been integrated into *RxJava 3* proper starting with version **3.0.0-RC7**.
+
+----------
 
 <a href='https://travis-ci.org/akarnokd/RxJavaJdk8Interop/builds'><img src='https://travis-ci.org/akarnokd/RxJavaJdk8Interop.svg?branch=3.x'></a>
 [![codecov.io](http://codecov.io/github/akarnokd/RxJavaJdk8Interop/coverage.svg?branch=3.x)](http://codecov.io/github/akarnokd/RxJavaJdk8Interop?branch=3.x)
